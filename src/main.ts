@@ -1,10 +1,16 @@
 import { NestFactory } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder, SwaggerCustomOptions } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
+import {
+  SwaggerModule,
+  DocumentBuilder,
+  SwaggerCustomOptions,
+} from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
+  app.use(cookieParser());
 
   const config = new DocumentBuilder()
     .setTitle('Doctoc Appointment Booking')
@@ -16,7 +22,7 @@ async function bootstrap() {
       bearerFormat: 'Bearer',
     })
     .build();
- 
+
   const options: SwaggerCustomOptions = {
     swaggerOptions: {
       persistAuthorization: true,

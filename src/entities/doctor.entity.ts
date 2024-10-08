@@ -2,44 +2,42 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { hash } from 'bcrypt';
 import { Document, Types } from 'mongoose';
 
-
-@Schema({timestamps: true})
+@Schema({ timestamps: true })
 export class DoctorEntity extends Document {
-  @Prop({unique: true, required: true})
+  @Prop({ unique: true, required: true })
   name: string;
 
-  @Prop({required: true})
+  @Prop({ required: true })
   email: string;
 
-  @Prop({required: true})
+  @Prop({ required: true })
   speciality: string;
 
-  @Prop({required: true})
+  @Prop({ required: true })
   experience: string;
 
-  @Prop({required: true})
+  @Prop({ required: true })
   about: string;
 
-  @Prop({required: true})
+  @Prop({ required: true })
   fees: string;
 
-  @Prop({ select: false, required: true})
+  @Prop({ select: false, required: true })
   password: string;
 
   @Prop([{ type: Types.ObjectId, ref: 'AppointmentEntity' }])
   appointments: Types.ObjectId[];
 
-  @Prop({ required: true, default: 3})
+  @Prop({ required: true, default: 3 })
   usersType: number;
 
-  @Prop({ default: true})
+  @Prop({ default: true })
   isActive: boolean;
 
   _id: Types.ObjectId;
 }
 
 export const DoctorEntitySchema = SchemaFactory.createForClass(DoctorEntity);
-
 
 DoctorEntitySchema.pre<DoctorEntity>('save', async function (next) {
   if (!this.isModified('password')) {
