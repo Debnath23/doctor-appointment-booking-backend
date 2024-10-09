@@ -20,65 +20,78 @@ export class AuthService {
   ) {}
 
   async createUser(createUserDto: CreateUserDto, res: Response) {
-    const user = await this.userModel.findOne({
-      $or: [{ username: createUserDto.name }, { email: createUserDto.email }],
-    });
-
-    if (user) {
-      throw new HttpException(
-        'Username or Email is already taken',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+    try {
+      const user = await this.userModel.findOne({
+        $or: [{ username: createUserDto.name }, { email: createUserDto.email }],
+      });
+  
+      if (user) {
+        throw new HttpException(
+          'Username or Email is already taken',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+  
+      const createdUser = new this.userModel(createUserDto);
+      await createdUser.save();
+  
+      const token = this.generateJwt(createdUser);
+  
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 60 * 60 * 1000,
+        sameSite: 'strict',
+      });
+  
+      return {
+        status: 200,
+        message: 'Signup successful!',
+      };
+    } catch (error) {
+      throw new Error(error.message);
     }
-
-    const createdUser = new this.userModel(createUserDto);
-    await createdUser.save();
-
-    const token = this.generateJwt(createdUser);
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000 * 10,
-    });
-
-    return {
-      status: 200,
-      message: 'Signup successful!',
-    };
   }
 
   async login(loginDto: LoginDto, res: Response) {
-    const user = await this.userModel
-      .findOne({ email: loginDto.email })
-      .select('+password');
-
-    if (!user) {
-      throw new HttpException(
-        'User not found!',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+    try {
+      const user = await this.userModel
+        .findOne({ email: loginDto.email })
+        .select('+password');
+  
+      if (!user) {
+        throw new HttpException(
+          'User not found!',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+  
+      const isPasswordCorrect = await compare(loginDto.password, user.password);
+  
+      if (!isPasswordCorrect) {
+        throw new HttpException(
+          'Invalid Password!',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
+      }
+  
+      const token = this.generateJwt(user);
+  
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 60 * 60 * 1000,
+        sameSite: 'strict',
+      });
+  
+      return {
+        status: 200,
+        message: 'Login successful!',
+      };
+    } catch (error) {
+      console.log(error);
+      throw new Error(error.message);
     }
-
-    const isPasswordCorrect = await compare(loginDto.password, user.password);
-
-    if (!isPasswordCorrect) {
-      throw new HttpException(
-        'Invalid Password!',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
-
-    const token = this.generateJwt(user);
-
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000 * 10,
-    });
-
-    return {
-      status: 200,
-      message: 'Login successful!',
-    };
   }
 
   generateJwt(user: UserEntity): string {
@@ -99,13 +112,12 @@ export class AuthService {
         email: user.email,
       };
 
-      return jwt.sign(payload, secret, { expiresIn: '10d' });
+      return jwt.sign(payload, secret, { expiresIn: '1h' });
     } catch (error) {
       throw new Error('Error generating JWT');
     }
   }
   
-
   async validateUserByEmail(email: string): Promise<UserEntity | null> {
     return this.userModel.findOne({ email });
   }
