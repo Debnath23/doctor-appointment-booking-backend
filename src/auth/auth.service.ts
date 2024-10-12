@@ -8,10 +8,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { compare } from 'bcrypt';
 import { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateUserDto } from '../dto/createUser.dto';
 import { LoginDto } from '../dto/login.dto';
 import { UserEntity } from '../entities/user.entity';
+import { ApiError } from 'src/utils/ApiError';
+import { ApiResponse } from 'src/utils/ApiResponse';
 
 @Injectable()
 export class AuthService {
@@ -19,37 +21,69 @@ export class AuthService {
     @InjectModel(UserEntity.name) private userModel: Model<UserEntity>,
   ) {}
 
+  async generateAccessAndRefreshTokens(userId: Types.ObjectId) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new ApiError(404, 'User not found');
+      }
+
+      const accessToken = user.generateAccessToken();
+      const refreshToken = user.generateRefreshToken();
+
+      user.refreshToken = refreshToken;
+      await user.save({ validateBeforeSave: false });
+
+      return { accessToken, refreshToken };
+    } catch (error) {
+      throw new ApiError(
+        500,
+        'Something went wrong while generating refresh and access token',
+      );
+    }
+  }
+
   async createUser(createUserDto: CreateUserDto, res: Response) {
     try {
-      const user = await this.userModel.findOne({
+      const existedUser = await this.userModel.findOne({
         $or: [{ username: createUserDto.name }, { email: createUserDto.email }],
       });
-  
-      if (user) {
-        throw new HttpException(
+
+      if (existedUser) {
+        throw new ApiError(
+          400,
           'Username or Email is already taken',
-          HttpStatus.UNPROCESSABLE_ENTITY,
         );
       }
-  
-      const createdUser = new this.userModel(createUserDto);
-      await createdUser.save();
-  
-      const token = this.generateJwt(createdUser);
-  
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: true,
-        maxAge: 60 * 60 * 1000,
-        sameSite: 'strict',
-      });
-  
-      return {
-        status: 200,
-        message: 'Signup successful!',
-      };
-    } catch (error) {
-      throw new Error(error.message);
+
+      const user = new this.userModel(createUserDto);
+      const createdUser = await user.save();
+
+      if (!createdUser) {
+        throw new ApiError(
+          500,
+          'Something went wrong while registering the user',
+        );
+      }
+
+      const { password, refreshToken, ...userWithoutSensitiveInfo } =
+        createdUser;
+
+      return res
+        .status(201)
+        .json(
+          new ApiResponse(
+            200,
+            userWithoutSensitiveInfo,
+            'User registered Successfully',
+          ),
+        );
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      throw new ApiError(
+        500,
+        'Something went wrong while registering the user',
+      );
     }
   }
 
@@ -58,32 +92,32 @@ export class AuthService {
       const user = await this.userModel
         .findOne({ email: loginDto.email })
         .select('+password');
-  
+
       if (!user) {
         throw new HttpException(
           'User not found!',
           HttpStatus.UNPROCESSABLE_ENTITY,
         );
       }
-  
+
       const isPasswordCorrect = await compare(loginDto.password, user.password);
-  
+
       if (!isPasswordCorrect) {
         throw new HttpException(
           'Invalid Password!',
           HttpStatus.UNPROCESSABLE_ENTITY,
         );
       }
-  
+
       const token = this.generateJwt(user);
-  
+
       res.cookie('token', token, {
         httpOnly: true,
         secure: true,
         maxAge: 60 * 60 * 1000,
         sameSite: 'strict',
       });
-  
+
       return {
         status: 200,
         message: 'Login successful!',
@@ -97,15 +131,15 @@ export class AuthService {
   generateJwt(user: UserEntity): string {
     try {
       const secret = process.env.TOKEN_SECRET;
-  
+
       if (!secret) {
         throw new Error('JWT Secret is not defined');
       }
-  
+
       if (!user || !user._id) {
         throw new Error('Invalid user data or missing user ID');
       }
-  
+
       const payload = {
         id: user._id,
         username: user.name,
@@ -117,7 +151,7 @@ export class AuthService {
       throw new Error('Error generating JWT');
     }
   }
-  
+
   async validateUserByEmail(email: string): Promise<UserEntity | null> {
     return this.userModel.findOne({ email });
   }
