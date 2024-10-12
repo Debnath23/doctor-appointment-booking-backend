@@ -5,6 +5,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserEntity, UserEntitySchema } from 'src/entities/user.entity';
 import { ConfigModule } from '@nestjs/config';
 import { envOptions } from 'src/config/envOptions';
+import { JwtAuthGuard } from 'src/middlewares/auth.middleware';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -12,8 +14,12 @@ import { envOptions } from 'src/config/envOptions';
     MongooseModule.forFeature([
       { name: UserEntity.name, schema: UserEntitySchema },
     ]),
+    JwtModule.register({
+      secret: process.env.ACCESS_TOKEN_SECRET,
+      signOptions: { expiresIn: process.env.ACCESS_TOKEN_EXPIRY },
+    }),
   ],
   controllers: [AuthController],
-  providers: [AuthService]
+  providers: [AuthService, JwtAuthGuard],
 })
 export class AuthModule {}

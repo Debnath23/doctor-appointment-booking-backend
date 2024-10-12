@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { compare, hash } from 'bcrypt';
 import { Document, Types } from 'mongoose';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { UserInterface } from '../interfaces/user.interface';
 
@@ -72,15 +72,24 @@ export class UserEntity extends Document implements UserInterface {
 
   generateAccessToken(): string {
     try {
+      const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
+      const accessTokenExpiry = process.env.ACCESS_TOKEN_EXPIRY;
+
+      if (!accessTokenSecret || !accessTokenExpiry) {
+        throw new Error(
+          'Access token secret or expiry not set in environment variables.',
+        );
+      }
+
       return jwt.sign(
         {
           _id: this._id,
           email: this.email,
           name: this.name,
         },
-        process.env.ACCESS_TOKEN_SECRET,
+        accessTokenSecret,
         {
-          expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+          expiresIn: accessTokenExpiry,
         },
       );
     } catch (error) {

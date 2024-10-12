@@ -1,13 +1,6 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { compare } from 'bcrypt';
-import { Request, Response } from 'express';
-import * as jwt from 'jsonwebtoken';
+import { Response } from 'express';
 import { Model, Types } from 'mongoose';
 import { CreateUserDto } from '../dto/createUser.dto';
 import { LoginDto } from '../dto/login.dto';
@@ -50,14 +43,15 @@ export class AuthService {
       });
 
       if (existedUser) {
-        throw new ApiError(
-          400,
-          'Username or Email is already taken',
-        );
+        throw new ApiError(400, 'Username or Email is already taken');
       }
 
       const user = new this.userModel(createUserDto);
-      const createdUser = await user.save();
+      await user.save();
+
+      const createdUser = await this.userModel
+        .findById(user._id)
+        .select('-password -refreshToken');
 
       if (!createdUser) {
         throw new ApiError(
@@ -66,17 +60,10 @@ export class AuthService {
         );
       }
 
-      const { password, refreshToken, ...userWithoutSensitiveInfo } =
-        createdUser;
-
       return res
         .status(201)
         .json(
-          new ApiResponse(
-            200,
-            userWithoutSensitiveInfo,
-            'User registered Successfully',
-          ),
+          new ApiResponse(200, createdUser, 'User registered Successfully'),
         );
     } catch (error: any) {
       console.error('Error creating user:', error);
@@ -87,88 +74,80 @@ export class AuthService {
     }
   }
 
-  async login(loginDto: LoginDto, res: Response) {
+  async loginUser(loginDto: LoginDto, res: Response) {
     try {
       const user = await this.userModel
         .findOne({ email: loginDto.email })
-        .select('+password');
+        .select('+password')
+        .exec();
 
       if (!user) {
-        throw new HttpException(
-          'User not found!',
-          HttpStatus.UNPROCESSABLE_ENTITY,
-        );
+        throw new ApiError(404, 'User does not exist');
       }
 
-      const isPasswordCorrect = await compare(loginDto.password, user.password);
+      const isPasswordValid = await user.isPasswordCorrect(loginDto.password);
 
-      if (!isPasswordCorrect) {
-        throw new HttpException(
-          'Invalid Password!',
-          HttpStatus.UNPROCESSABLE_ENTITY,
-        );
+      if (!isPasswordValid) {
+        throw new ApiError(401, 'Invalid user credentials');
       }
 
-      const token = this.generateJwt(user);
+      const { accessToken, refreshToken } =
+        await this.generateAccessAndRefreshTokens(user._id);
 
-      res.cookie('token', token, {
+      const loggedInUser = await this.userModel
+        .findById(user._id)
+        .select('-password -refreshToken');
+
+      const options = {
         httpOnly: true,
         secure: true,
-        maxAge: 60 * 60 * 1000,
-        sameSite: 'strict',
-      });
-
-      return {
-        status: 200,
-        message: 'Login successful!',
       };
+
+      return res
+        .status(200)
+        .cookie('accessToken', accessToken, options)
+        .cookie('refreshToken', refreshToken, options)
+        .json(
+          new ApiResponse(
+            200,
+            {
+              user: loggedInUser,
+              accessToken,
+              refreshToken,
+            },
+            'User logged In Successfully',
+          ),
+        );
     } catch (error) {
-      console.log(error);
+      console.log('>>>>>>>>>>>>', error);
       throw new Error(error.message);
     }
   }
 
-  generateJwt(user: UserEntity): string {
+  async logoutUser(userId: Types.ObjectId, res: Response) {
     try {
-      const secret = process.env.TOKEN_SECRET;
-
-      if (!secret) {
-        throw new Error('JWT Secret is not defined');
-      }
-
-      if (!user || !user._id) {
-        throw new Error('Invalid user data or missing user ID');
-      }
-
-      const payload = {
-        id: user._id,
-        username: user.name,
-        email: user.email,
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        { $unset: { refreshToken: 1 } },
+        { new: true }
+      );
+  
+      const options = {
+        httpOnly: true,
+        secure: true,
       };
-
-      return jwt.sign(payload, secret, { expiresIn: '1h' });
+  
+      return res
+        .status(200)
+        .clearCookie('accessToken', options)
+        .clearCookie('refreshToken', options)
+        .json(new ApiResponse(200, {}, 'User logged out successfully'));
     } catch (error) {
-      throw new Error('Error generating JWT');
-    }
-  }
-
-  async validateUserByEmail(email: string): Promise<UserEntity | null> {
-    return this.userModel.findOne({ email });
-  }
-
-  async findByEmail(email: string): Promise<UserEntity | null> {
-    return this.userModel.findOne({ email });
-  }
-
-  getDataFromToken(request: Request): string {
-    try {
-      const token = request.cookies?.token || '';
-
-      const decodedToken: any = jwt.verify(token, process.env.JWT_SECRET!);
-
-      return decodedToken.id;
-    } catch (error: any) {
-      throw new UnauthorizedException('Invalid token');
+      console.error('Error during user logout:', error);
+  
+      return res
+        .status(500)
+        .json({ success: false, message: 'Failed to log out the user.' });
     }
   }
 }
