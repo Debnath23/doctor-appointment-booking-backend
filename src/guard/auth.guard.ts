@@ -4,12 +4,14 @@ import {
   ExecutionContext,
   HttpException,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserEntity } from 'src/entities/user.entity';
+import { TokenExpiredError } from 'jsonwebtoken';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -46,10 +48,10 @@ export class JwtAuthGuard implements CanActivate {
 
       return true;
     } catch (error) {
-      throw new HttpException(
-        error?.message || 'Invalid access token',
-        HttpStatus.UNAUTHORIZED,
-      );
+      if (error instanceof TokenExpiredError) {
+        throw new UnauthorizedException('Access token has expired');
+      }
+      throw new UnauthorizedException(error?.message || 'Invalid access token');
     }
   }
 

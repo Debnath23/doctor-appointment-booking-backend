@@ -2,6 +2,7 @@ import {
   Body,
   ConflictException,
   Controller,
+  Get,
   HttpException,
   HttpStatus,
   InternalServerErrorException,
@@ -18,7 +19,7 @@ import { CreateUserDto } from '../dto/createUser.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ApiError } from 'src/utils/ApiError';
-import { JwtAuthGuard } from 'src/middlewares/auth.middleware';
+import { JwtAuthGuard } from 'src/guard/auth.guard';
 import { SetCookiesInterceptor } from 'src/interceptor/set-cookies.interceptor';
 import { ApiResponse } from 'src/utils/ApiResponse';
 import { ClearCookiesInterceptor } from 'src/interceptor/clear-cookies.interceptor';
@@ -78,5 +79,11 @@ export class AuthController {
         'Something went wrong while logging out.',
       );
     }
+  }
+
+  @Get('verify')
+  @UseGuards(JwtAuthGuard)
+  async verifyToken(@Req() req: Request) {
+    return { isValid: true, user: req.user };
   }
 }

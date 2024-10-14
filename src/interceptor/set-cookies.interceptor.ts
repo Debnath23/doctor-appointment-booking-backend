@@ -10,9 +10,9 @@ export class SetCookiesInterceptor implements NestInterceptor {
         const response = context.switchToHttp().getResponse();
         const options = {
           httpOnly: true,
-          secure: false,
+          secure: true,
           sameSite: 'none' as 'lax' | 'strict' | 'none',
-          path: '/',
+          // path: '/',
         };
 
         if (data.accessToken) {
