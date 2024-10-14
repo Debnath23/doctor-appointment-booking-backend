@@ -1,4 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Response } from 'express';
 import { Model, Types } from 'mongoose';
@@ -36,14 +42,14 @@ export class AuthService {
     }
   }
 
-  async createUser(createUserDto: CreateUserDto, res: Response) {
+  async createUser(createUserDto: CreateUserDto) {
     try {
       const existedUser = await this.userModel.findOne({
         $or: [{ username: createUserDto.name }, { email: createUserDto.email }],
       });
 
       if (existedUser) {
-        throw new ApiError(400, 'Username or Email is already taken');
+        throw new ConflictException('Username or Email is already taken');
       }
 
       const user = new this.userModel(createUserDto);
@@ -54,27 +60,27 @@ export class AuthService {
         .select('-password -refreshToken');
 
       if (!createdUser) {
-        throw new ApiError(
-          500,
+        throw new InternalServerErrorException(
           'Something went wrong while registering the user',
         );
       }
 
-      return res
-        .status(201)
-        .json(
-          new ApiResponse(200, createdUser, 'User registered Successfully'),
-        );
+      return {
+        user: createdUser,
+        message: 'User registered Successfully',
+      };
     } catch (error: any) {
       console.error('Error creating user:', error);
-      throw new ApiError(
-        500,
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
         'Something went wrong while registering the user',
       );
     }
   }
 
-  async loginUser(loginDto: LoginDto, res: Response) {
+  async loginUser(loginDto: LoginDto) {
     try {
       const user = await this.userModel
         .findOne({ email: loginDto.email })
@@ -82,13 +88,13 @@ export class AuthService {
         .exec();
 
       if (!user) {
-        throw new ApiError(404, 'User does not exist');
+        throw new NotFoundException('User does not exist');
       }
 
       const isPasswordValid = await user.isPasswordCorrect(loginDto.password);
 
       if (!isPasswordValid) {
-        throw new ApiError(401, 'Invalid user credentials');
+        throw new UnauthorizedException('Invalid user credentials');
       }
 
       const { accessToken, refreshToken } =
@@ -98,29 +104,14 @@ export class AuthService {
         .findById(user._id)
         .select('-password -refreshToken');
 
-      const options = {
-        httpOnly: true,
-        secure: true,
+      return {
+        user: loggedInUser,
+        accessToken,
+        refreshToken,
+        message: 'User logged In Successfully',
       };
-
-      return res
-        .status(200)
-        .cookie('accessToken', accessToken, options)
-        .cookie('refreshToken', refreshToken, options)
-        .json(
-          new ApiResponse(
-            200,
-            {
-              user: loggedInUser,
-              accessToken,
-              refreshToken,
-            },
-            'User logged In Successfully',
-          ),
-        );
     } catch (error) {
-      console.log('>>>>>>>>>>>>', error);
-      throw new Error(error.message);
+      throw error;
     }
   }
 
@@ -129,25 +120,23 @@ export class AuthService {
       await this.userModel.findByIdAndUpdate(
         userId,
         { $unset: { refreshToken: 1 } },
-        { new: true }
+        { new: true },
       );
-  
+
       const options = {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none' as const,
+        path: '/',
       };
-  
-      return res
-        .status(200)
-        .clearCookie('accessToken', options)
-        .clearCookie('refreshToken', options)
-        .json(new ApiResponse(200, {}, 'User logged out successfully'));
+
+      res.clearCookie('accessToken', options);
+      res.clearCookie('refreshToken', options);
+
+      return { success: true, message: 'User logged out successfully' };
     } catch (error) {
       console.error('Error during user logout:', error);
-  
-      return res
-        .status(500)
-        .json({ success: false, message: 'Failed to log out the user.' });
+      throw new InternalServerErrorException('Failed to log out the user.');
     }
   }
 }

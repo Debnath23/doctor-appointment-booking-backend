@@ -9,12 +9,17 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors();
+  app.enableCors({
+    origin: process.env.CLIENT_BASE_URL,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  });
+  
   app.use(cookieParser());
 
   const config = new DocumentBuilder()
-    .setTitle('Doctoc Appointment Booking')
-    .setDescription('Doctoc Appointment Booking')
+    .setTitle('Doctor Appointment Booking')
+    .setDescription('Doctor Appointment Booking')
     .setVersion('1.0')
     .addBearerAuth({
       type: 'http',
@@ -33,6 +38,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document, options);
 
-  await app.listen(process.env.PORT);
+  await app.listen(process.env.SERVER_PORT);
 }
 bootstrap();
