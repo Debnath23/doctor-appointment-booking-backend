@@ -59,6 +59,14 @@ export class UserEntity extends Document implements UserInterface {
   _id: Types.ObjectId;
 
   async isPasswordCorrect(password: string): Promise<boolean> {
+    if (!password || !this.password) {
+      console.error('Password or hash missing during comparison');
+      throw new HttpException(
+        'An error occurred while verifying the password. Please try again.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    
     try {
       return await compare(password, this.password);
     } catch (error) {
@@ -69,6 +77,7 @@ export class UserEntity extends Document implements UserInterface {
       );
     }
   }
+  
 
   generateAccessToken(): string {
     try {
@@ -130,6 +139,7 @@ UserEntitySchema.pre<UserEntity>('save', async function (next) {
   }
 
   try {
+    console.log('Hashing password before save');
     this.password = await hash(this.password, 10);
     next();
   } catch (error) {

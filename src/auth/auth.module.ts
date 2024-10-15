@@ -5,7 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserEntity, UserEntitySchema } from 'src/entities/user.entity';
 import { ConfigModule } from '@nestjs/config';
 import { envOptions } from 'src/config/envOptions';
-import { JwtAuthGuard } from 'src/guard/auth.guard';
+import { JwtAuthGuard } from 'src/guard/jwt.guard';
 import { JwtModule } from '@nestjs/jwt';
 
 @Module({

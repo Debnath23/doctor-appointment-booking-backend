@@ -22,6 +22,12 @@ export class DoctorEntity extends Document {
     trim: true })
   email: string;
 
+  @Prop({ required: true })
+  profileImg: string;
+
+  @Prop({ required: true })
+  degree: string;
+
   @Prop({ required: true, lowercase: true, trim: true })
   speciality: string;
 
@@ -46,7 +52,7 @@ export class DoctorEntity extends Document {
   @Prop({ default: true })
   isActive: boolean;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   refreshToken: string;
 
   _id: Types.ObjectId;

@@ -19,7 +19,7 @@ import { CreateUserDto } from '../dto/createUser.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ApiError } from 'src/utils/ApiError';
-import { JwtAuthGuard } from 'src/guard/auth.guard';
+import { JwtAuthGuard } from 'src/guard/jwt.guard';
 import { SetCookiesInterceptor } from 'src/interceptor/set-cookies.interceptor';
 import { ApiResponse } from 'src/utils/ApiResponse';
 import { ClearCookiesInterceptor } from 'src/interceptor/clear-cookies.interceptor';

@@ -12,7 +12,6 @@ import { CreateUserDto } from '../dto/createUser.dto';
 import { LoginDto } from '../dto/login.dto';
 import { UserEntity } from '../entities/user.entity';
 import { ApiError } from 'src/utils/ApiError';
-import { ApiResponse } from 'src/utils/ApiResponse';
 
 @Injectable()
 export class AuthService {
@@ -83,7 +82,7 @@ export class AuthService {
   async loginUser(loginDto: LoginDto) {
     try {
       const user = await this.userModel
-        .findOne({ email: loginDto.email })
+        .findOne({ email: loginDto.email.trim().toLowerCase() })
         .select('+password')
         .exec();
 
