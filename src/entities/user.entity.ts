@@ -4,6 +4,34 @@ import { Document, Types } from 'mongoose';
 import * as jwt from 'jsonwebtoken';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { UserInterface } from '../interfaces/user.interface';
+import { BookAppointmentDto } from 'src/dto/bookAppointment.dto';
+
+@Schema({ _id: false })
+export class AppointmentEntity {
+  @Prop({ required: true })
+  doctorId: Types.ObjectId;
+
+  @Prop({ required: true })
+  appointmentDate: Date;
+
+  @Prop({ required: true })
+  appointmentTime: string;
+}
+
+export const AppointmentEntitySchema =
+  SchemaFactory.createForClass(AppointmentEntity);
+
+AppointmentEntitySchema.pre('save', function (next) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (this.appointmentDate < today) {
+    const error = new Error('Cannot book for past dates.');
+    return next(error);
+  }
+
+  next();
+});
 
 @Schema({ timestamps: true })
 export class UserEntity extends Document implements UserInterface {
@@ -45,7 +73,7 @@ export class UserEntity extends Document implements UserInterface {
   password: string;
 
   @Prop([{ type: Types.ObjectId, ref: 'AppointmentEntity' }])
-  appointments: Types.ObjectId[];
+  appointments: BookAppointmentDto[];
 
   @Prop({ required: true, default: 2 })
   userType: number;
@@ -66,7 +94,7 @@ export class UserEntity extends Document implements UserInterface {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    
+
     try {
       return await compare(password, this.password);
     } catch (error) {
@@ -77,7 +105,6 @@ export class UserEntity extends Document implements UserInterface {
       );
     }
   }
-  
 
   generateAccessToken(): string {
     try {

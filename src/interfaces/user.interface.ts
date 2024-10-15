@@ -1,4 +1,5 @@
 import { Document, Types } from 'mongoose';
+import { BookAppointmentDto } from 'src/dto/bookAppointment.dto';
 
 export interface UserInterface extends Document {
   name: string;
@@ -8,7 +9,7 @@ export interface UserInterface extends Document {
   gender?: string;
   dob?: string;
   password: string;
-  appointments: Types.ObjectId[];
+  appointments: BookAppointmentDto[];
   userType: number;
   isActive: boolean;
   refreshToken?: string;

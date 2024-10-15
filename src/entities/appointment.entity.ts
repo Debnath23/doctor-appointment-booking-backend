@@ -4,9 +4,6 @@ import { Document, Types } from 'mongoose';
 @Schema({ timestamps: true })
 export class AppointmentEntity extends Document {
   @Prop({ required: true })
-  userId: Types.ObjectId;
-
-  @Prop({ required: true })
   doctorId: Types.ObjectId;
 
   @Prop({ required: true })
