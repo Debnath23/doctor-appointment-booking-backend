@@ -22,11 +22,16 @@ export const AppointmentEntitySchema =
   SchemaFactory.createForClass(AppointmentEntity);
 
 AppointmentEntitySchema.pre('save', function (next) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date();
 
-  if (this.appointmentDate < today) {
-    const error = new Error('Cannot book for past dates.');
+  const appointmentDate = new Date(this.appointmentDate);
+
+  const [hours, minutes] = this.appointmentTime.split(':').map(Number);
+
+  appointmentDate.setHours(hours, minutes, 0, 0);
+
+  if (appointmentDate < now) {
+    const error = new Error('Cannot book for past dates or times.');
     return next(error);
   }
 

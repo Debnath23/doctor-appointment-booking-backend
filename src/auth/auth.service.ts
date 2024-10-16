@@ -101,7 +101,7 @@ export class AuthService {
 
       const loggedInUser = await this.userModel
         .findById(user._id)
-        .select('-password -refreshToken');
+        .select('-password -refreshToken -appointments');
 
       return {
         user: loggedInUser,
