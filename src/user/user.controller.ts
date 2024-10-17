@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ConflictException,
   Controller,
@@ -23,9 +24,7 @@ export class UserController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async userDetails(
-    @Req() req: Request,
-  ) {
+  async userDetails(@Req() req: Request) {
     try {
       if (!req.user) {
         throw new NotFoundException('User not found!');
@@ -33,9 +32,7 @@ export class UserController {
 
       const userId = req.user._id;
 
-      const response = await this.userService.userDetails(
-        userId
-      );
+      const response = await this.userService.userDetails(userId);
 
       return response;
     } catch (error) {
@@ -55,35 +52,34 @@ export class UserController {
     @Body() bookAppointmentDto: BookAppointmentDto,
     @Req() req: Request,
   ) {
-    try {
-      if (!req.user) {
-        throw new NotFoundException('User not found!');
-      }
-
-      const userId = req.user._id;
-
-      const response = await this.userService.bookAppointment(
-        bookAppointmentDto,
-        userId,
-      );
-      
-      return response;
-    } catch (error) {
-      if (error instanceof ConflictException) {
-        throw new HttpException(error.message, HttpStatus.CONFLICT);
-      }
-      throw new HttpException(
-        'Something went wrong while booking an appointment',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    if (!req.user) {
+      throw new NotFoundException('User not found!');
     }
+
+    const userId = req.user._id;
+
+    const appointmentDateUTC = new Date(bookAppointmentDto.appointmentDate);
+    if (isNaN(appointmentDateUTC.getTime())) {
+      throw new BadRequestException('Invalid booking date format.');
+    }
+
+    const now = new Date();
+    if (appointmentDateUTC < now) {
+      throw new BadRequestException('Cannot book an appointment in the past.');
+    }
+
+    return await this.userService.bookAppointment(
+      {
+        ...bookAppointmentDto,
+        appointmentDate: appointmentDateUTC,
+      },
+      userId,
+    );
   }
 
   @Get('appointment-details')
   @UseGuards(JwtAuthGuard)
-  async userAppointmentDetails(
-    @Req() req: Request,
-  ) {
+  async userAppointmentDetails(@Req() req: Request) {
     try {
       if (!req.user) {
         throw new NotFoundException('User not found!');
@@ -91,9 +87,7 @@ export class UserController {
 
       const userId = req.user._id;
 
-      const response = await this.userService.userAppointmentDetails(
-        userId
-      );
+      const response = await this.userService.userAppointmentDetails(userId);
 
       return response;
     } catch (error) {

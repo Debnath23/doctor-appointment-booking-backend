@@ -8,7 +8,6 @@ export class BookAppointmentDto {
   readonly doctorId: Types.ObjectId;
 
   @ApiProperty({ required: true })
-  @IsDate()
   readonly appointmentDate: Date;
 
   @ApiProperty({ required: true })

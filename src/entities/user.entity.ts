@@ -21,22 +21,27 @@ export class AppointmentEntity {
 export const AppointmentEntitySchema =
   SchemaFactory.createForClass(AppointmentEntity);
 
-AppointmentEntitySchema.pre('save', function (next) {
-  const now = new Date();
-
-  const appointmentDate = new Date(this.appointmentDate);
-
-  const [hours, minutes] = this.appointmentTime.split(':').map(Number);
-
-  appointmentDate.setHours(hours, minutes, 0, 0);
-
-  if (appointmentDate < now) {
-    const error = new Error('Cannot book for past dates or times.');
-    return next(error);
-  }
-
-  next();
-});
+  AppointmentEntitySchema.pre('save', function (next) {
+    const now = new Date();
+  
+    // Assuming appointmentDate is in "YYYY-MM-DD" format
+    const appointmentDateStr = this.appointmentDate;
+  
+    // Assuming appointmentTime is in "HH:mm" format
+    const appointmentTimeStr = this.appointmentTime;
+  
+    // Combine date and time into a single Date object
+    const appointmentDateTime = new Date(`${appointmentDateStr}T${appointmentTimeStr}:00`);
+  
+    // Compare the full appointment date and time with current date and time
+    if (appointmentDateTime < now) {
+      const error = new Error('Cannot book for past dates or times.');
+      return next(error);
+    }
+  
+    next();
+  });
+  
 
 @Schema({ timestamps: true })
 export class UserEntity extends Document implements UserInterface {

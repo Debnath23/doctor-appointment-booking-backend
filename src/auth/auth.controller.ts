@@ -2,6 +2,7 @@ import {
   Body,
   ConflictException,
   Controller,
+  Delete,
   Get,
   HttpException,
   HttpStatus,
@@ -64,7 +65,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('logout')
+  @Delete('logout')
   @UseInterceptors(ClearCookiesInterceptor)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     try {

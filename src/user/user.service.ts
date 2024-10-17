@@ -22,58 +22,47 @@ export class UserService {
     bookAppointmentDto: BookAppointmentDto,
     userId: Types.ObjectId,
   ) {
-    try {
-      const existingUser = await this.userModel.findById(userId);
-      if (!existingUser) {
-        throw new NotFoundException('User does not exist!');
-      }
-
-      const existingAppointment = await this.userModel.findOne({
-        _id: userId,
-        'appointments.doctorId': bookAppointmentDto.doctorId,
-        'appointments.appointmentDate': bookAppointmentDto.appointmentDate,
-        'appointments.appointmentTime': bookAppointmentDto.appointmentTime,
-      });
-
-      if (existingAppointment) {
-        throw new HttpException(
-          'Appointment already exists for the selected date and time.',
-          HttpStatus.BAD_REQUEST
-        );
-      }
-
-      const newAppointment = {
-        doctorId: bookAppointmentDto.doctorId,
-        appointmentDate: bookAppointmentDto.appointmentDate,
-        appointmentTime: bookAppointmentDto.appointmentTime,
-      };
-
-      existingUser.appointments.push(newAppointment);
-      await existingUser.save();
-
-      const doctor = await this.doctorModel.findById(
-        bookAppointmentDto.doctorId,
-      );
-      if (!doctor) {
-        throw new NotFoundException('Doctor does not exist!');
-      }
-
-      doctor.appointments.push(existingUser._id);
-      await doctor.save();
-
-      return {
-        appointment: newAppointment,
-        message: 'Appointment booked successfully!',
-      };
-    } catch (error) {
-      console.error('Error booking appointment:', error);
-      throw new HttpException(
-        'An error occurred while booking the appointment. Please try again later.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    const existingUser = await this.userModel.findById(userId);
+    if (!existingUser) {
+      throw new NotFoundException('User does not exist!');
     }
+  
+    const existingAppointment = await this.userModel.findOne({
+      _id: userId,
+      'appointments.doctorId': bookAppointmentDto.doctorId,
+      'appointments.appointmentDate': bookAppointmentDto.appointmentDate,
+      'appointments.appointmentTime': bookAppointmentDto.appointmentTime,
+    });
+  
+    if (existingAppointment) {
+      throw new UnprocessableEntityException('Appointment already exists for the selected date and time.');
+    }
+  
+    // Create the new appointment object
+    const newAppointment = {
+      doctorId: bookAppointmentDto.doctorId,
+      appointmentDate: bookAppointmentDto.appointmentDate,  // Still a Date
+      appointmentTime: bookAppointmentDto.appointmentTime,
+    };
+  
+    existingUser.appointments.push(newAppointment);
+    await existingUser.save();
+  
+    const doctor = await this.doctorModel.findById(bookAppointmentDto.doctorId);
+    if (!doctor) {
+      throw new NotFoundException('Doctor does not exist!');
+    }
+  
+    doctor.appointments.push(existingUser._id);
+    await doctor.save();
+  
+    return {
+      appointment: newAppointment,
+      message: 'Appointment booked successfully!',
+    };
   }
-
+  
+  
   async userDetails(userId: Types.ObjectId) {
     try {
       const user = await this.userModel
@@ -100,11 +89,12 @@ export class UserService {
   async userAppointmentDetails(userId: Types.ObjectId) {
     try {
       const user = await this.userModel
-      .findById(userId)
-      .select('-_id -email -password -isActive -userType -createdAt -updatedAt -refreshToken -__v')
-      .lean()
-      .exec();
-    
+        .findById(userId)
+        .select(
+          '-_id -email -password -isActive -userType -createdAt -updatedAt -refreshToken -__v',
+        )
+        .lean()
+        .exec();
 
       if (!user) {
         throw new NotFoundException('User does not exist!');

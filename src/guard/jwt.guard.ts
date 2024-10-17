@@ -35,7 +35,7 @@ export class JwtAuthGuard implements CanActivate {
 
       const user = await this.userModel
         .findById(decodedToken._id)
-        .select('-password -refreshToken');
+        .select('-password -appointments -refreshToken');
 
       if (!user) {
         throw new HttpException(
