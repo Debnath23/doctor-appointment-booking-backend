@@ -6,13 +6,15 @@ import { UserEntity, UserEntitySchema } from 'src/entities/user.entity';
 import { ConfigModule } from '@nestjs/config';
 import { envOptions } from 'src/config/envOptions';
 import { JwtAuthGuard } from 'src/guard/jwt.guard';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
+import { DoctorEntity, DoctorEntitySchema } from 'src/entities/doctor.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot(envOptions),
     MongooseModule.forFeature([
       { name: UserEntity.name, schema: UserEntitySchema },
+      { name: DoctorEntity.name, schema: DoctorEntitySchema },
     ]),
     JwtModule.register({
       secret: process.env.ACCESS_TOKEN_SECRET,
@@ -20,6 +22,7 @@ import { JwtModule } from '@nestjs/jwt';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard],
+  providers: [AuthService, JwtAuthGuard, JwtService],
+  exports: [JwtService]
 })
 export class AuthModule {}

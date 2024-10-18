@@ -63,6 +63,7 @@ export class AdminController {
         await this.adminService.createDoctorAccount(createDoctorDto);
       return new ApiResponse(201, result.doctor, result.message);
     } catch (error) {
+      console.error('Error creating doctor:', error);
       if (error instanceof ConflictException) {
         throw new HttpException(error.message, HttpStatus.CONFLICT);
       }

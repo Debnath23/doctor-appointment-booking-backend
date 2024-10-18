@@ -52,29 +52,38 @@ export class UserController {
     @Body() bookAppointmentDto: BookAppointmentDto,
     @Req() req: Request,
   ) {
-    if (!req.user) {
-      throw new NotFoundException('User not found!');
+    try {
+      if (!req.user) {
+        throw new NotFoundException('User not found!');
+      }
+
+      const userId = (req.user as any)._id;
+
+      const appointmentDateUTC = new Date(bookAppointmentDto.appointmentDate);
+      if (isNaN(appointmentDateUTC.getTime())) {
+        throw new BadRequestException('Invalid booking date format.');
+      }
+
+      const now = new Date();
+      if (appointmentDateUTC < now) {
+        throw new BadRequestException(
+          'Cannot book an appointment in the past.',
+        );
+      }
+
+      return await this.userService.bookAppointment(
+        {
+          ...bookAppointmentDto,
+          appointmentDate: appointmentDateUTC,
+        },
+        userId,
+      );
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'An error occurred while booking the appointment.',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-
-    const userId = req.user._id;
-
-    const appointmentDateUTC = new Date(bookAppointmentDto.appointmentDate);
-    if (isNaN(appointmentDateUTC.getTime())) {
-      throw new BadRequestException('Invalid booking date format.');
-    }
-
-    const now = new Date();
-    if (appointmentDateUTC < now) {
-      throw new BadRequestException('Cannot book an appointment in the past.');
-    }
-
-    return await this.userService.bookAppointment(
-      {
-        ...bookAppointmentDto,
-        appointmentDate: appointmentDateUTC,
-      },
-      userId,
-    );
   }
 
   @Get('appointment-details')
