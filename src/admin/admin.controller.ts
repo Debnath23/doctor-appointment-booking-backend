@@ -59,9 +59,7 @@ export class AdminController {
 
       createDoctorDto.profileImg = file.path;
 
-      const result =
-        await this.adminService.createDoctorAccount(createDoctorDto);
-      return new ApiResponse(201, result.doctor, result.message);
+      return await this.adminService.createDoctorAccount(createDoctorDto);
     } catch (error) {
       console.error('Error creating doctor:', error);
       if (error instanceof ConflictException) {
