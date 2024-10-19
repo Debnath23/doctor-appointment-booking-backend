@@ -74,28 +74,28 @@ export class DoctorController {
     }
   }
 
-  @Get('appointment-details')
-  @UseGuards(JwtAuthGuard)
-  async doctorAppointmentDetails(@Req() req: Request) {
-    try {
-      if (!req.user) {
-        throw new NotFoundException('Doctor is not found!');
-      }
+  // @Get('appointment-details')
+  // @UseGuards(JwtAuthGuard)
+  // async doctorAppointmentDetails(@Req() req: Request) {
+  //   try {
+  //     if (!req.user) {
+  //       throw new NotFoundException('Doctor is not found!');
+  //     }
 
-      const doctorId = req.user._id;
+  //     const doctorId = req.user._id;
 
-      const response =
-        await this.doctorService.doctorAppointmentDetails(doctorId);
+  //     const response =
+  //       await this.doctorService.doctorAppointmentDetails(doctorId);
 
-      return response;
-    } catch (error) {
-      if (error instanceof ConflictException) {
-        throw new HttpException(error.message, HttpStatus.CONFLICT);
-      }
-      throw new HttpException(
-        'Something went wrong while fetching doctor details.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
+  //     return response;
+  //   } catch (error) {
+  //     if (error instanceof ConflictException) {
+  //       throw new HttpException(error.message, HttpStatus.CONFLICT);
+  //     }
+  //     throw new HttpException(
+  //       'Something went wrong while fetching doctor details.',
+  //       HttpStatus.INTERNAL_SERVER_ERROR,
+  //     );
+  //   }
+  // }
 }

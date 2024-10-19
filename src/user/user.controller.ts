@@ -57,18 +57,11 @@ export class UserController {
         throw new NotFoundException('User not found!');
       }
 
-      const userId = (req.user as any)._id;
+      const userId = req.user._id;
 
       const appointmentDateUTC = new Date(bookAppointmentDto.appointmentDate);
       if (isNaN(appointmentDateUTC.getTime())) {
         throw new BadRequestException('Invalid booking date format.');
-      }
-
-      const now = new Date();
-      if (appointmentDateUTC < now) {
-        throw new BadRequestException(
-          'Cannot book an appointment in the past.',
-        );
       }
 
       return await this.userService.bookAppointment(
@@ -96,9 +89,7 @@ export class UserController {
 
       const userId = req.user._id;
 
-      const response = await this.userService.userAppointmentDetails(userId);
-
-      return response;
+      return await this.userService.userAppointmentDetails(userId);
     } catch (error) {
       if (error instanceof ConflictException) {
         throw new HttpException(error.message, HttpStatus.CONFLICT);

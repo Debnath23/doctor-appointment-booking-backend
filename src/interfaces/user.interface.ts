@@ -9,7 +9,7 @@ export interface UserInterface extends Document {
   gender?: string;
   dob?: string;
   password: string;
-  appointments: BookAppointmentDto[];
+  appointments: Types.ObjectId[];
   userType: number;
   isActive: boolean;
   refreshToken?: string;

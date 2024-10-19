@@ -44,7 +44,7 @@ export class DoctorEntity extends Document {
   @Prop({ select: false, required: true })
   password: string;
 
-  @Prop([{ type: Types.ObjectId, ref: 'UserEntity' }])
+  @Prop([{ type: Types.ObjectId, ref: 'AppointmentEntity' }])
   appointments: Types.ObjectId[];
 
   @Prop({ required: true, default: 3 })

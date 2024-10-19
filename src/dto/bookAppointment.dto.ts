@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsString } from 'class-validator';
+import { IsString } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class BookAppointmentDto {

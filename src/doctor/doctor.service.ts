@@ -127,40 +127,40 @@ export class DoctorService {
     }
   }
 
-  async doctorAppointmentDetails(doctorId: Types.ObjectId) {
-    try {
-      const doctor = await this.doctorModel.findById(doctorId);
+  // async doctorAppointmentDetails(doctorId: Types.ObjectId) {
+  //   try {
+  //     const doctor = await this.doctorModel.findById(doctorId);
 
-      if (!doctor) {
-        throw new NotFoundException('Doctor does not exist!');
-      }
+  //     if (!doctor) {
+  //       throw new NotFoundException('Doctor does not exist!');
+  //     }
 
-      const usersWithAppointments = await this.userModel.find(
-        {
-          _id: { $in: doctor.appointments },
-          'appointments.doctorId': doctor._id,
-        },
-        'appointments',
-      );
+  //     const usersWithAppointments = await this.userModel.find(
+  //       {
+  //         _id: { $in: doctor.appointments },
+  //         'appointments.doctorId': doctor._id,
+  //       },
+  //       'appointments',
+  //     );
 
-      const appointments = usersWithAppointments
-        .map((user) => {
-          return user.appointments.filter((appointment) =>
-            appointment.doctorId.equals(doctorId),
-          );
-        })
-        .flat();
+  //     const appointments = usersWithAppointments
+  //       .map((user) => {
+  //         return user.appointments.filter((appointment) =>
+  //           appointment.doctorId.equals(doctorId),
+  //         );
+  //       })
+  //       .flat();
 
-      return {
-        appointments,
-        message: 'Appointment details fetched successfully!',
-      };
-    } catch (error) {
-      console.error('Error getting Appointment details:', error);
-      throw new HttpException(
-        'An error occurred while getting Appointment details. Please try again later.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
+  //     return {
+  //       appointments,
+  //       message: 'Appointment details fetched successfully!',
+  //     };
+  //   } catch (error) {
+  //     console.error('Error getting Appointment details:', error);
+  //     throw new HttpException(
+  //       'An error occurred while getting Appointment details. Please try again later.',
+  //       HttpStatus.INTERNAL_SERVER_ERROR,
+  //     );
+  //   }
+  // }
 }

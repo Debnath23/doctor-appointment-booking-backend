@@ -6,40 +6,6 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { UserInterface } from '../interfaces/user.interface';
 import { BookAppointmentDto } from 'src/dto/bookAppointment.dto';
 
-@Schema({ _id: false })
-export class AppointmentEntity {
-  @Prop({ required: true })
-  doctorId: Types.ObjectId;
-
-  @Prop({ required: true })
-  appointmentDate: Date;
-
-  @Prop({ required: true })
-  appointmentTime: string;
-}
-
-export const AppointmentEntitySchema =
-  SchemaFactory.createForClass(AppointmentEntity);
-
-// AppointmentEntitySchema.pre('save', function (next) {
-//   const now = new Date();
-
-//   const appointmentDateStr = this.appointmentDate;
-
-//   const appointmentTimeStr = this.appointmentTime;
-
-//   const appointmentDateTime = new Date(
-//     `${appointmentDateStr}T${appointmentTimeStr}`,
-//   );
-
-//   if (appointmentDateTime < now) {
-//     const error = new Error('Cannot book for past dates or times.');
-//     return next(error);
-//   }
-
-//   next();
-// });
-
 @Schema({ timestamps: true })
 export class UserEntity extends Document implements UserInterface {
   @Prop({
@@ -80,7 +46,7 @@ export class UserEntity extends Document implements UserInterface {
   password: string;
 
   @Prop([{ type: Types.ObjectId, ref: 'AppointmentEntity' }])
-  appointments: BookAppointmentDto[];
+  appointments: Types.ObjectId[];
 
   @Prop({ required: true, default: 2 })
   userType: number;
