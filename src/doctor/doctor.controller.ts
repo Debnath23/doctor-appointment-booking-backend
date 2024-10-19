@@ -7,7 +7,9 @@ import {
   HttpStatus,
   InternalServerErrorException,
   NotFoundException,
+  Param,
   Post,
+  Query,
   Req,
   UseGuards,
   UseInterceptors,
@@ -43,19 +45,24 @@ export class DoctorController {
     }
   }
 
-  @Get()
-  @UseGuards(JwtAuthGuard)
-  async doctorDetails(@Req() req: Request) {
+  @Get('all-doctors-details')
+  async allDoctors(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
     try {
-      if (!req.user) {
-        throw new NotFoundException('Doctor is not found!');
-      }
+      const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
+      const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
+      return await this.doctorService.allDoctors(limitVal, offsetVal);
+    } catch (error) {
+      throw error;
+    }
+  }
 
-      const doctorId = req.user._id;
-
-      const response = await this.doctorService.doctorDetails(doctorId);
-
-      return response;
+  @Get('/:docId')
+  async doctorDetails(@Param('docId') docId: number) {
+    try {
+      return await this.doctorService.doctorDetails(docId);
     } catch (error) {
       if (error instanceof ConflictException) {
         throw new HttpException(error.message, HttpStatus.CONFLICT);

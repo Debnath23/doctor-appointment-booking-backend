@@ -77,10 +77,37 @@ export class DoctorService {
     }
   }
 
-  async doctorDetails(doctorId: Types.ObjectId) {
+  async allDoctors(limitVal: number, offsetVal: number) {
+    try {
+      const totalCount = await this.doctorModel.countDocuments().exec();
+
+      const doctors = await this.doctorModel
+        .find()
+        .select('-appointments')
+        .limit(limitVal)
+        .skip(offsetVal)
+        .exec();
+
+      if (!doctors || doctors.length === 0) {
+        throw new NotFoundException('No doctors found!');
+      }
+
+      return {
+        doctors,
+        totalCount,
+        limitVal,
+        offsetVal,
+        message: 'List of doctors data fetch successfully!',
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async doctorDetails(docId: number) {
     try {
       const doctor = await this.doctorModel
-        .findById(doctorId)
+        .findById(docId)
         .select('-password -refreshToken -appointments');
 
       if (!doctor) {
