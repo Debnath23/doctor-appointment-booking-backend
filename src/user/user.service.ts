@@ -116,8 +116,9 @@ export class UserService {
 
       const appointments = await this.appointmentModel
         .find({ userId: userId })
-        .populate('doctorId', 'name speciality profileImg');
-
+        .populate('doctorId', 'name speciality profileImg')
+        .sort({ appointmentDate: -1 });
+        
       if (!appointments || appointments.length === 0) {
         throw new NotFoundException('No appointments found!');
       }
@@ -131,6 +132,49 @@ export class UserService {
       throw new HttpException(
         'An error occurred while getting user details. Please try again later.',
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async cancelAppointmentService(
+    appointment_id: Types.ObjectId,
+    doctor_id: Types.ObjectId,
+    userId: Types.ObjectId,
+  ) {
+    try {
+      const existingUser = await this.userModel.findById(userId);
+      if (!existingUser) {
+        throw new NotFoundException('User does not exist!');
+      }
+
+      const existingDoctor = await this.doctorModel.findById(doctor_id);
+      if (!existingDoctor) {
+        throw new NotFoundException('Doctor does not exist!');
+      }
+
+      const existingAppointment =
+        await this.appointmentModel.findById(appointment_id);
+      if (!existingAppointment) {
+        throw new UnprocessableEntityException(
+          'Appointment does not exist for the selected date and time.',
+        );
+      }
+
+      await existingAppointment.deleteOne();
+
+      await this.doctorModel.findByIdAndUpdate(existingDoctor._id, {
+        $pull: { appointments: existingAppointment._id },
+      });
+
+      await this.userModel.findByIdAndUpdate(existingUser._id, {
+        $pull: { appointments: existingAppointment._id },
+      });
+
+      return { message: 'Appointment deleted successfully!' };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'An error occurred while deleting the appointment.',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

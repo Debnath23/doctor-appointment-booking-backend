@@ -3,11 +3,13 @@ import {
   Body,
   ConflictException,
   Controller,
+  Delete,
   Get,
   HttpException,
   HttpStatus,
   NotFoundException,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -16,6 +18,7 @@ import { JwtAuthGuard } from 'src/guard/jwt.guard';
 import { UserService } from './user.service';
 import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
+import { isValidObjectId, Types } from 'mongoose';
 
 @Controller('user')
 @ApiTags('Appointment Booking')
@@ -97,6 +100,40 @@ export class UserController {
       throw new HttpException(
         'Something went wrong while fetching user appointment details.',
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Delete('cancel-appointment')
+  @UseGuards(JwtAuthGuard)
+  async cancelAppointment(
+    @Query('appointment_id') appointment_id: string,
+    @Query('doctor_id') doctor_id: string,
+    @Req() req: Request,
+  ) {
+    try {
+      if (!req.user) {
+        throw new NotFoundException('User not found!');
+      }
+
+      const userId = req.user._id as Types.ObjectId;
+
+      if (!isValidObjectId(appointment_id) || !isValidObjectId(doctor_id)) {
+        throw new BadRequestException('Invalid appointment or doctor ID format.');
+      }
+  
+      const appointmentObjId = new Types.ObjectId(appointment_id);
+      const doctorObjId = new Types.ObjectId(doctor_id);
+  
+      return await this.userService.cancelAppointmentService(
+        appointmentObjId,
+        doctorObjId,
+        userId,
+      );
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'An error occurred while canceling the appointment.',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

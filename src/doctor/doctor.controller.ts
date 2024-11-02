@@ -74,6 +74,21 @@ export class DoctorController {
     }
   }
 
+  @Get('/search')
+  async searchDoctor(@Query('name') name: string) {
+    try {
+      return await this.doctorService.searchDoctorByName(name);
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw new HttpException(error.message, HttpStatus.CONFLICT);
+      }
+      throw new HttpException(
+        'Something went wrong while fetching doctor details.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   // @Get('appointment-details')
   // @UseGuards(JwtAuthGuard)
   // async doctorAppointmentDetails(@Req() req: Request) {

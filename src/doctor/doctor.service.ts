@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import { LoginDto } from 'src/dto/login.dto';
 import { DoctorEntity } from 'src/entities/doctor.entity';
 import { UserEntity } from 'src/entities/user.entity';
@@ -120,6 +120,36 @@ export class DoctorService {
       };
     } catch (error) {
       console.error('Error getting user details:', error);
+      throw new HttpException(
+        'An error occurred while getting doctor details. Please try again later.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async searchDoctorByName(name: string) {
+    try {
+      let query;
+
+      if (mongoose.Types.ObjectId.isValid(name)) {
+        query = { _id: name };
+      } else {
+        query = { name: { $regex: name, $options: 'i' } };
+      }
+      const doctor = await this.doctorModel
+        .findOne(query)
+        .select('-password -refreshToken -appointments');
+
+      if (!doctor) {
+        throw new NotFoundException('Doctor does not exist!');
+      }
+
+      return {
+        doctor,
+        message: 'Doctor details fetched successfully!',
+      };
+    } catch (error) {
+      console.error('Error getting doctor details:', error);
       throw new HttpException(
         'An error occurred while getting doctor details. Please try again later.',
         HttpStatus.INTERNAL_SERVER_ERROR,
