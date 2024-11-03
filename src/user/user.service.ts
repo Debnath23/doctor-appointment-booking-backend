@@ -8,6 +8,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { BookAppointmentDto } from 'src/dto/bookAppointment.dto';
+import { UpdateUserDto } from 'src/dto/updateUser.dto';
 import { AppointmentEntity } from 'src/entities/appointment.entity';
 import { DoctorEntity } from 'src/entities/doctor.entity';
 import { UserEntity } from 'src/entities/user.entity';
@@ -118,7 +119,7 @@ export class UserService {
         .find({ userId: userId })
         .populate('doctorId', 'name speciality profileImg')
         .sort({ appointmentDate: -1 });
-        
+
       if (!appointments || appointments.length === 0) {
         throw new NotFoundException('No appointments found!');
       }
@@ -174,6 +175,32 @@ export class UserService {
     } catch (error) {
       throw new HttpException(
         error.message || 'An error occurred while deleting the appointment.',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async updateUserDetailsService(
+    updateUserDetails: UpdateUserDto,
+    userId: Types.ObjectId,
+  ) {
+    try {
+      const existingUser = await this.userModel.findById(userId);
+      if (!existingUser) {
+        throw new NotFoundException('User does not exist!');
+      }
+
+      const updatedUserDetails = await this.userModel
+        .findByIdAndUpdate(userId, updateUserDetails, { new: true })
+        .select('-appointments -userType -isActive -refreshToken -__v');
+
+      return {
+        updatedUser: updatedUserDetails,
+        message: 'User updated successfully!',
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'An error occurred while updating user.',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

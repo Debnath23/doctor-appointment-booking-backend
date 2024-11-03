@@ -8,6 +8,7 @@ import {
   HttpException,
   HttpStatus,
   NotFoundException,
+  Patch,
   Post,
   Query,
   Req,
@@ -19,6 +20,7 @@ import { UserService } from './user.service';
 import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { isValidObjectId, Types } from 'mongoose';
+import { UpdateUserDto } from 'src/dto/updateUser.dto';
 
 @Controller('user')
 @ApiTags('Appointment Booking')
@@ -119,12 +121,14 @@ export class UserController {
       const userId = req.user._id as Types.ObjectId;
 
       if (!isValidObjectId(appointment_id) || !isValidObjectId(doctor_id)) {
-        throw new BadRequestException('Invalid appointment or doctor ID format.');
+        throw new BadRequestException(
+          'Invalid appointment or doctor ID format.',
+        );
       }
-  
+
       const appointmentObjId = new Types.ObjectId(appointment_id);
       const doctorObjId = new Types.ObjectId(doctor_id);
-  
+
       return await this.userService.cancelAppointmentService(
         appointmentObjId,
         doctorObjId,
@@ -133,6 +137,31 @@ export class UserController {
     } catch (error) {
       throw new HttpException(
         error.message || 'An error occurred while canceling the appointment.',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Patch()
+  @UseGuards(JwtAuthGuard)
+  async updateUserDetails(
+    @Body() updateUserDetails: UpdateUserDto,
+    @Req() req: Request,
+  ) {
+    try {
+      if (!req.user) {
+        throw new NotFoundException('User not found!');
+      }
+
+      const userId = req.user._id;
+
+      return await this.userService.updateUserDetailsService(
+        updateUserDetails,
+        userId,
+      );
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'An error occurred while updating user.',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
