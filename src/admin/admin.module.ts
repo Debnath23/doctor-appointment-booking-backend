@@ -7,12 +7,14 @@ import { AdminGuard } from 'src/guard/admin.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtAuthGuard } from 'src/guard/jwt.guard';
 import { UserEntity, UserEntitySchema } from 'src/entities/user.entity';
+import { AppointmentEntity, AppointmentEntitySchema } from 'src/entities/appointment.entity';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: DoctorEntity.name, schema: DoctorEntitySchema },
       { name: UserEntity.name, schema: UserEntitySchema },
+      { name: AppointmentEntity.name, schema: AppointmentEntitySchema },
     ]),
     JwtModule.register({
       secret: process.env.ACCESS_TOKEN_SECRET,

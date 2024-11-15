@@ -107,7 +107,11 @@ export class UserService {
     }
   }
 
-  async userAppointmentDetails(userId: Types.ObjectId) {
+  async userAppointmentDetails(
+    userId: Types.ObjectId,
+    limitVal: number,
+    offsetVal: number,
+  ) {
     try {
       const user = await this.userModel.findById(userId);
 
@@ -115,10 +119,17 @@ export class UserService {
         throw new NotFoundException('User does not exist!');
       }
 
+      const totalCount = await this.appointmentModel
+        .countDocuments({ userId: userId })
+        .exec();
+
       const appointments = await this.appointmentModel
         .find({ userId: userId })
         .populate('doctorId', 'name speciality profileImg')
-        .sort({ appointmentDate: -1 });
+        .limit(limitVal)
+        .skip(offsetVal)
+        .sort({ appointmentDate: -1 })
+        .exec();
 
       if (!appointments || appointments.length === 0) {
         throw new NotFoundException('No appointments found!');
@@ -126,6 +137,9 @@ export class UserService {
 
       return {
         appointments,
+        totalCount,
+        limitVal,
+        offsetVal,
         message: 'Appointment details fetched successfully!',
       };
     } catch (error) {

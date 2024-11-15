@@ -5,10 +5,12 @@ import {
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model, Types } from 'mongoose';
 import { LoginDto } from 'src/dto/login.dto';
+import { AppointmentEntity } from 'src/entities/appointment.entity';
 import { DoctorEntity } from 'src/entities/doctor.entity';
 import { UserEntity } from 'src/entities/user.entity';
 
@@ -17,6 +19,8 @@ export class DoctorService {
   constructor(
     @InjectModel(UserEntity.name) private userModel: Model<UserEntity>,
     @InjectModel(DoctorEntity.name) private doctorModel: Model<DoctorEntity>,
+    @InjectModel(AppointmentEntity.name)
+    private appointmentModel: Model<AppointmentEntity>,
   ) {}
 
   async generateAccessAndRefreshTokens(userId: Types.ObjectId) {
@@ -129,7 +133,7 @@ export class DoctorService {
 
   async searchDoctorByName(name: string) {
     try {
-      let query;
+      let query: any;
 
       if (mongoose.Types.ObjectId.isValid(name)) {
         query = { _id: name };
@@ -153,6 +157,79 @@ export class DoctorService {
       throw new HttpException(
         'An error occurred while getting doctor details. Please try again later.',
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async doctorAppointmentDetailsService(docId: Types.ObjectId) {
+    try {
+      const doctor = await this.doctorModel.findById(docId);
+
+      if (!doctor) {
+        throw new NotFoundException('User does not exist!');
+      }
+
+      const appointments = await this.appointmentModel
+        .find({ doctorId: doctor._id })
+        .populate('userId', 'name phone gender dob')
+        .sort({ appointmentDate: -1 });
+
+      if (!appointments || appointments.length === 0) {
+        throw new NotFoundException('No appointments found!');
+      }
+
+      return {
+        appointments,
+        message: 'Appointment details fetched successfully!',
+      };
+    } catch (error) {
+      console.error('Error getting appointment details:', error);
+      throw new HttpException(
+        'An error occurred while getting doctor details. Please try again later.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async cancelAppointmentService(
+    appointment_id: Types.ObjectId,
+    doctor_id: Types.ObjectId,
+    userId: Types.ObjectId,
+  ) {
+    try {
+      const existingUser = await this.userModel.findById(userId);
+      if (!existingUser) {
+        throw new NotFoundException('User does not exist!');
+      }
+
+      const existingDoctor = await this.doctorModel.findById(doctor_id);
+      if (!existingDoctor) {
+        throw new NotFoundException('Doctor does not exist!');
+      }
+
+      const existingAppointment =
+        await this.appointmentModel.findById(appointment_id);
+      if (!existingAppointment) {
+        throw new UnprocessableEntityException(
+          'Appointment does not exist for the selected date and time.',
+        );
+      }
+
+      await existingAppointment.deleteOne();
+
+      await this.doctorModel.findByIdAndUpdate(existingDoctor._id, {
+        $pull: { appointments: existingAppointment._id },
+      });
+
+      await this.userModel.findByIdAndUpdate(existingUser._id, {
+        $pull: { appointments: existingAppointment._id },
+      });
+
+      return { message: 'Appointment deleted successfully!' };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'An error occurred while deleting the appointment.',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

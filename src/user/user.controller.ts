@@ -86,15 +86,20 @@ export class UserController {
 
   @Get('appointment-details')
   @UseGuards(JwtAuthGuard)
-  async userAppointmentDetails(@Req() req: Request) {
+  async userAppointmentDetails(@Req() req: Request, @Query('limit') limit?: number,
+  @Query('offset') offset?: number) {
     try {
+      const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
+      const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
+
       if (!req.user) {
         throw new NotFoundException('User not found!');
       }
 
       const userId = req.user._id;
 
-      return await this.userService.userAppointmentDetails(userId);
+      return await this.userService.userAppointmentDetails(userId, limitVal,
+        offsetVal,);
     } catch (error) {
       if (error instanceof ConflictException) {
         throw new HttpException(error.message, HttpStatus.CONFLICT);

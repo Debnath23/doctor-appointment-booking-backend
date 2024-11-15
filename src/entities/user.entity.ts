@@ -139,7 +139,6 @@ UserEntitySchema.pre<UserEntity>('save', async function (next) {
   }
 
   try {
-    console.log('Hashing password before save');
     this.password = await hash(this.password, 10);
     next();
   } catch (error) {

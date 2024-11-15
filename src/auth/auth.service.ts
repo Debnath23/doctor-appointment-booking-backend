@@ -54,9 +54,12 @@ export class AuthService {
       const user = new this.userModel(createUserDto);
       await user.save();
 
+      const { accessToken, refreshToken } =
+        await this.generateAccessAndRefreshTokens(user._id);
+
       const createdUser = await this.userModel
         .findById(user._id)
-        .select('-password -refreshToken');
+        .select('-password -refreshToken -appointments');
 
       if (!createdUser) {
         throw new InternalServerErrorException(
@@ -66,6 +69,8 @@ export class AuthService {
 
       return {
         user: createdUser,
+        accessToken,
+        refreshToken,
         message: 'User registered Successfully',
       };
     } catch (error: any) {

@@ -1,7 +1,9 @@
 import {
+  BadRequestException,
   Body,
   ConflictException,
   Controller,
+  Delete,
   Get,
   HttpException,
   HttpStatus,
@@ -21,6 +23,7 @@ import { Request } from 'express';
 import { SetCookiesInterceptor } from 'src/interceptor/set-cookies.interceptor';
 import { LoginDto } from 'src/dto/login.dto';
 import { ApiError } from 'src/utils/ApiError';
+import { isValidObjectId, Types } from 'mongoose';
 
 @Controller('doctor')
 @ApiTags('Doctor')
@@ -53,6 +56,7 @@ export class DoctorController {
     try {
       const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
       const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
+      
       return await this.doctorService.allDoctors(limitVal, offsetVal);
     } catch (error) {
       throw error;
@@ -85,6 +89,65 @@ export class DoctorController {
       throw new HttpException(
         'Something went wrong while fetching doctor details.',
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('appointment-details')
+  @UseGuards(JwtAuthGuard)
+  async doctorAppointmentDetails(@Req() req: Request) {
+    try {
+      if (!req.user || !req.user._id) {
+        throw new NotFoundException('Doctor not found!');
+      }
+
+      const docId = req.user._id as Types.ObjectId;
+
+      return await this.doctorService.doctorAppointmentDetailsService(docId);
+    } catch (error) {
+      console.error(error);
+      if (error instanceof ConflictException) {
+        throw new HttpException(error.message, HttpStatus.CONFLICT);
+      }
+      throw new HttpException(
+        'Something went wrong while fetching doctor appointment details.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Delete('cancel-appointment')
+  @UseGuards(JwtAuthGuard)
+  async cancelAppointment(
+    @Query('appointment_id') appointment_id: string,
+    @Query('user_id') user_id: string,
+    @Req() req: Request,
+  ) {
+    try {
+      if (!req.user) {
+        throw new NotFoundException('Doctor not found!');
+      }
+
+      const docId = req.user._id as Types.ObjectId;
+
+      if (!isValidObjectId(appointment_id) || !isValidObjectId(user_id)) {
+        throw new BadRequestException(
+          'Invalid appointment or doctor ID format.',
+        );
+      }
+
+      const appointmentObjId = new Types.ObjectId(appointment_id);
+      const userObjId = new Types.ObjectId(user_id);
+
+      return await this.doctorService.cancelAppointmentService(
+        appointmentObjId,
+        userObjId,
+        docId,
+      );
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'An error occurred while canceling the appointment.',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

@@ -8,6 +8,7 @@ import { envOptions } from 'src/config/envOptions';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserEntity, UserEntitySchema } from 'src/entities/user.entity';
 import { DoctorEntity, DoctorEntitySchema } from 'src/entities/doctor.entity';
+import { AppointmentEntity, AppointmentEntitySchema } from 'src/entities/appointment.entity';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { DoctorEntity, DoctorEntitySchema } from 'src/entities/doctor.entity';
     MongooseModule.forFeature([
       { name: UserEntity.name, schema: UserEntitySchema },
       { name: DoctorEntity.name, schema: DoctorEntitySchema },
+      { name: AppointmentEntity.name, schema: AppointmentEntitySchema },
     ]),
     JwtModule.register({
       secret: process.env.ACCESS_TOKEN_SECRET,

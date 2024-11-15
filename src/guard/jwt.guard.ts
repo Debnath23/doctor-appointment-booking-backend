@@ -9,7 +9,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { UserEntity } from 'src/entities/user.entity';
 import { TokenExpiredError } from 'jsonwebtoken';
 import { DoctorEntity } from 'src/entities/doctor.entity';
@@ -46,7 +46,7 @@ export class JwtAuthGuard implements CanActivate {
         userOrDoctor = user;
       } else {
         const doctor = await this.doctorModel
-          .findById(decodedToken._id)
+          .findById(decodedToken._id as Types.ObjectId)
           .select(
             '-password -refreshToken -appointments -profileImg -degree -speciality -experience -about -fees -createdAt -updatedAt -__v',
           );
