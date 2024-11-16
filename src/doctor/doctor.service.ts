@@ -1,8 +1,5 @@
 import {
-  HttpException,
-  HttpStatus,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
   UnprocessableEntityException,
@@ -39,9 +36,7 @@ export class DoctorService {
 
       return { accessToken, refreshToken };
     } catch (error) {
-      throw new InternalServerErrorException(
-        'Something went wrong while generating refresh and access token',
-      );
+      throw error;
     }
   }
 
@@ -123,11 +118,7 @@ export class DoctorService {
         message: 'Doctor details fetch Successfully!',
       };
     } catch (error) {
-      console.error('Error getting user details:', error);
-      throw new HttpException(
-        'An error occurred while getting doctor details. Please try again later.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -153,11 +144,7 @@ export class DoctorService {
         message: 'Doctor details fetched successfully!',
       };
     } catch (error) {
-      console.error('Error getting doctor details:', error);
-      throw new HttpException(
-        'An error occurred while getting doctor details. Please try again later.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -183,11 +170,7 @@ export class DoctorService {
         message: 'Appointment details fetched successfully!',
       };
     } catch (error) {
-      console.error('Error getting appointment details:', error);
-      throw new HttpException(
-        'An error occurred while getting doctor details. Please try again later.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -227,47 +210,7 @@ export class DoctorService {
 
       return { message: 'Appointment deleted successfully!' };
     } catch (error) {
-      throw new HttpException(
-        error.message || 'An error occurred while deleting the appointment.',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
-
-  // async doctorAppointmentDetails(doctorId: Types.ObjectId) {
-  //   try {
-  //     const doctor = await this.doctorModel.findById(doctorId);
-
-  //     if (!doctor) {
-  //       throw new NotFoundException('Doctor does not exist!');
-  //     }
-
-  //     const usersWithAppointments = await this.userModel.find(
-  //       {
-  //         _id: { $in: doctor.appointments },
-  //         'appointments.doctorId': doctor._id,
-  //       },
-  //       'appointments',
-  //     );
-
-  //     const appointments = usersWithAppointments
-  //       .map((user) => {
-  //         return user.appointments.filter((appointment) =>
-  //           appointment.doctorId.equals(doctorId),
-  //         );
-  //       })
-  //       .flat();
-
-  //     return {
-  //       appointments,
-  //       message: 'Appointment details fetched successfully!',
-  //     };
-  //   } catch (error) {
-  //     console.error('Error getting Appointment details:', error);
-  //     throw new HttpException(
-  //       'An error occurred while getting Appointment details. Please try again later.',
-  //       HttpStatus.INTERNAL_SERVER_ERROR,
-  //     );
-  //   }
-  // }
 }

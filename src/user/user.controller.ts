@@ -41,13 +41,7 @@ export class UserController {
 
       return response;
     } catch (error) {
-      if (error instanceof ConflictException) {
-        throw new HttpException(error.message, HttpStatus.CONFLICT);
-      }
-      throw new HttpException(
-        'Something went wrong while fetching user details.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -77,17 +71,17 @@ export class UserController {
         userId,
       );
     } catch (error) {
-      throw new HttpException(
-        error.message || 'An error occurred while booking the appointment.',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
   @Get('appointment-details')
   @UseGuards(JwtAuthGuard)
-  async userAppointmentDetails(@Req() req: Request, @Query('limit') limit?: number,
-  @Query('offset') offset?: number) {
+  async userAppointmentDetails(
+    @Req() req: Request,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
     try {
       const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
       const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
@@ -98,16 +92,13 @@ export class UserController {
 
       const userId = req.user._id;
 
-      return await this.userService.userAppointmentDetails(userId, limitVal,
-        offsetVal,);
-    } catch (error) {
-      if (error instanceof ConflictException) {
-        throw new HttpException(error.message, HttpStatus.CONFLICT);
-      }
-      throw new HttpException(
-        'Something went wrong while fetching user appointment details.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+      return await this.userService.userAppointmentDetails(
+        userId,
+        limitVal,
+        offsetVal,
       );
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -140,10 +131,7 @@ export class UserController {
         userId,
       );
     } catch (error) {
-      throw new HttpException(
-        error.message || 'An error occurred while canceling the appointment.',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -165,10 +153,7 @@ export class UserController {
         userId,
       );
     } catch (error) {
-      throw new HttpException(
-        error.message || 'An error occurred while updating user.',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 }

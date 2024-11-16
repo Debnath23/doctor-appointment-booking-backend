@@ -1,6 +1,4 @@
 import {
-  HttpException,
-  HttpStatus,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -27,13 +25,11 @@ export class UserService {
     userId: Types.ObjectId,
   ) {
     try {
-      // Check if user exists
       const existingUser = await this.userModel.findById(userId);
       if (!existingUser) {
         throw new NotFoundException('User does not exist!');
       }
 
-      // Check if doctor exists
       const existingDoctor = await this.doctorModel.findById(
         bookAppointmentDto.doctorId,
       );
@@ -41,7 +37,6 @@ export class UserService {
         throw new NotFoundException('Doctor does not exist!');
       }
 
-      // Check if an appointment already exists for the same time slot
       const existingAppointment = await this.appointmentModel.findOne({
         userId: userId,
         doctorId: bookAppointmentDto.doctorId,
@@ -55,7 +50,6 @@ export class UserService {
         );
       }
 
-      // Create new appointment
       const appointment = new this.appointmentModel({
         userId: userId,
         doctorId: bookAppointmentDto.doctorId,
@@ -65,7 +59,6 @@ export class UserService {
 
       await appointment.save();
 
-      // Push appointment to doctor and user appointments array
       existingDoctor.appointments.push(appointment._id);
       await existingDoctor.save();
 
@@ -77,10 +70,7 @@ export class UserService {
         message: 'Appointment booked successfully!',
       };
     } catch (error) {
-      throw new HttpException(
-        error.message || 'An error occurred while booking the appointment.',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -99,11 +89,7 @@ export class UserService {
         message: 'User details fetch Successfully!',
       };
     } catch (error) {
-      console.error('Error getting user details:', error);
-      throw new HttpException(
-        'An error occurred while getting user details. Please try again later.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -143,11 +129,7 @@ export class UserService {
         message: 'Appointment details fetched successfully!',
       };
     } catch (error) {
-      console.error('Error getting appointment details:', error);
-      throw new HttpException(
-        'An error occurred while getting user details. Please try again later.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -187,10 +169,7 @@ export class UserService {
 
       return { message: 'Appointment deleted successfully!' };
     } catch (error) {
-      throw new HttpException(
-        error.message || 'An error occurred while deleting the appointment.',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -213,10 +192,7 @@ export class UserService {
         message: 'User updated successfully!',
       };
     } catch (error) {
-      throw new HttpException(
-        error.message || 'An error occurred while updating user.',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 }

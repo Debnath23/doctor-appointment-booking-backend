@@ -36,13 +36,7 @@ export class AuthController {
       const result = await this.authService.createUser(createUserDto);
       return new ApiResponse(201, result.user, result.message);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        throw new HttpException(error.message, HttpStatus.CONFLICT);
-      }
-      throw new HttpException(
-        'Something went wrong while registering the user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -56,11 +50,7 @@ export class AuthController {
 
       return await this.authService.loginUser(loginDto);
     } catch (error: any) {
-      console.error('Error during user login:', error);
-
-      throw new InternalServerErrorException(
-        'Something went wrong while logging in the user.',
-      );
+      throw error;
     }
   }
 
@@ -75,10 +65,7 @@ export class AuthController {
 
       return await this.authService.logoutUser(req.user._id, res);
     } catch (error) {
-      console.error('Error during user logout:', error);
-      throw new InternalServerErrorException(
-        'Something went wrong while logging out.',
-      );
+      throw error;
     }
   }
 

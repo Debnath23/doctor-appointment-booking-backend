@@ -40,11 +40,7 @@ export class DoctorController {
 
       return await this.doctorService.loginDoctor(loginDto);
     } catch (error: any) {
-      console.error('Error during doctor login:', error);
-
-      throw new InternalServerErrorException(
-        'Something went wrong while logging in the doctor.',
-      );
+      throw error;
     }
   }
 
@@ -56,7 +52,7 @@ export class DoctorController {
     try {
       const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
       const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
-      
+
       return await this.doctorService.allDoctors(limitVal, offsetVal);
     } catch (error) {
       throw error;
@@ -68,13 +64,7 @@ export class DoctorController {
     try {
       return await this.doctorService.doctorDetails(docId);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        throw new HttpException(error.message, HttpStatus.CONFLICT);
-      }
-      throw new HttpException(
-        'Something went wrong while fetching doctor details.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -83,13 +73,7 @@ export class DoctorController {
     try {
       return await this.doctorService.searchDoctorByName(name);
     } catch (error) {
-      if (error instanceof ConflictException) {
-        throw new HttpException(error.message, HttpStatus.CONFLICT);
-      }
-      throw new HttpException(
-        'Something went wrong while fetching doctor details.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -105,14 +89,7 @@ export class DoctorController {
 
       return await this.doctorService.doctorAppointmentDetailsService(docId);
     } catch (error) {
-      console.error(error);
-      if (error instanceof ConflictException) {
-        throw new HttpException(error.message, HttpStatus.CONFLICT);
-      }
-      throw new HttpException(
-        'Something went wrong while fetching doctor appointment details.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -145,35 +122,7 @@ export class DoctorController {
         docId,
       );
     } catch (error) {
-      throw new HttpException(
-        error.message || 'An error occurred while canceling the appointment.',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
-
-  // @Get('appointment-details')
-  // @UseGuards(JwtAuthGuard)
-  // async doctorAppointmentDetails(@Req() req: Request) {
-  //   try {
-  //     if (!req.user) {
-  //       throw new NotFoundException('Doctor is not found!');
-  //     }
-
-  //     const doctorId = req.user._id;
-
-  //     const response =
-  //       await this.doctorService.doctorAppointmentDetails(doctorId);
-
-  //     return response;
-  //   } catch (error) {
-  //     if (error instanceof ConflictException) {
-  //       throw new HttpException(error.message, HttpStatus.CONFLICT);
-  //     }
-  //     throw new HttpException(
-  //       'Something went wrong while fetching doctor details.',
-  //       HttpStatus.INTERNAL_SERVER_ERROR,
-  //     );
-  //   }
-  // }
 }

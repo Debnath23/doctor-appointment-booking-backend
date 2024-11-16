@@ -34,10 +34,7 @@ export class AuthService {
 
       return { accessToken, refreshToken };
     } catch (error) {
-      throw new ApiError(
-        500,
-        'Something went wrong while generating refresh and access token',
-      );
+      throw error;
     }
   }
 
@@ -74,13 +71,7 @@ export class AuthService {
         message: 'User registered Successfully',
       };
     } catch (error: any) {
-      console.error('Error creating user:', error);
-      if (error instanceof ConflictException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Something went wrong while registering the user',
-      );
+      throw error;
     }
   }
 
@@ -139,8 +130,7 @@ export class AuthService {
 
       return { success: true, message: 'User logged out successfully' };
     } catch (error) {
-      console.error('Error during user logout:', error);
-      throw new InternalServerErrorException('Failed to log out the user.');
+      throw error;
     }
   }
 }

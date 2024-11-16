@@ -6,7 +6,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { envOptions } from './config/envOptions';
 import { UserModule } from './user/user.module';
 import { DoctorModule } from './doctor/doctor.module';
-import { AppointmentModule } from './appointment/appointment.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 
@@ -16,7 +15,6 @@ import { AdminModule } from './admin/admin.module';
     MongooseModule.forRoot(process.env.MONGODB_URI),
     UserModule,
     DoctorModule,
-    AppointmentModule,
     AuthModule,
     AdminModule,
   ],
