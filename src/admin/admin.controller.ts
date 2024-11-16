@@ -8,7 +8,6 @@ import {
   Param,
   Post,
   Query,
-  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -64,14 +63,7 @@ export class AdminController {
 
       return await this.adminService.createDoctorAccount(createDoctorDto);
     } catch (error) {
-      console.error('Error creating doctor:', error);
-      if (error instanceof ConflictException) {
-        throw new HttpException(error.message, HttpStatus.CONFLICT);
-      }
-      throw new HttpException(
-        'Something went wrong while registering the doctor',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
@@ -90,14 +82,11 @@ export class AdminController {
         offsetVal,
       );
     } catch (error) {
-      throw new HttpException(
-        'Something went wrong while getting users details',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
     }
   }
 
-  @Get('appointment-details/:userId')
+  @Get('user/appointment-details/:userId')
   @UseGuards(AdminGuard)
   async userAppointmentDetails(
     @Param('userId') userId: string,
@@ -114,13 +103,47 @@ export class AdminController {
         offsetVal,
       );
     } catch (error) {
-      if (error instanceof ConflictException) {
-        throw new HttpException(error.message, HttpStatus.CONFLICT);
-      }
-      throw new HttpException(
-        'Something went wrong while fetching user appointment details.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+      throw error;
+    }
+  }
+
+  @Get('doctors-details')
+  @UseGuards(AdminGuard)
+  async getdoctorsDetails(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    try {
+      const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
+      const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
+
+      return await this.adminService.getdoctorsDetailsService(
+        limitVal,
+        offsetVal,
       );
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Get('doctor/appointment-details/:doctorId')
+  @UseGuards(AdminGuard)
+  async doctorAppointmentDetails(
+    @Param('doctorId') doctorId: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    try {
+      const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
+      const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
+
+      return await this.adminService.doctorAppointmentDetailsService(
+        doctorId,
+        limitVal,
+        offsetVal,
+      );
+    } catch (error) {
+      throw error;
     }
   }
 }

@@ -3,7 +3,6 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -65,15 +64,7 @@ export class AdminService {
         message: 'Doctor registered successfully',
       };
     } catch (error: any) {
-      console.error('Error creating doctor:', error);
-
-      if (error instanceof ConflictException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'Something went wrong while registering the doctor',
-      );
+      throw error;
     }
   }
 
@@ -140,11 +131,73 @@ export class AdminService {
         message: 'Appointment details fetched successfully!',
       };
     } catch (error) {
-      console.error('Error getting appointment details:', error);
-      throw new HttpException(
-        'An error occurred while getting user details. Please try again later.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw error;
+    }
+  }
+
+  async getdoctorsDetailsService(limitVal: number, offsetVal: number) {
+    try {
+      const totalCount = await this.doctorModel.countDocuments().exec();
+
+      const doctors = await this.doctorModel
+        .find()
+        .select('-appointments -refreshToken')
+        .limit(limitVal)
+        .skip(offsetVal)
+        .exec();
+
+      if (!doctors || doctors.length === 0) {
+        throw new NotFoundException('No doctors found!');
+      }
+
+      return {
+        doctors,
+        totalCount,
+        limitVal,
+        offsetVal,
+        message: 'List of doctors data fetch successfully!',
+      };
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  async doctorAppointmentDetailsService(
+    doctorId: string,
+    limitVal: number,
+    offsetVal: number,
+  ) {
+    try {
+      const doctor = await this.doctorModel.findById(doctorId).exec();
+      if (!doctor) {
+        throw new NotFoundException('Doctor does not exist!');
+      }
+
+      const totalCount = await this.appointmentModel
+        .countDocuments({ doctorId })
+        .exec();
+
+      const appointments = await this.appointmentModel
+        .find({ doctorId })
+        .populate('userId', 'name email phone gender')
+        .limit(limitVal)
+        .skip(offsetVal)
+        .sort({ appointmentDate: -1 })
+        .lean()
+        .exec();
+
+      return {
+        appointments,
+        totalCount,
+        limit: limitVal,
+        offset: offsetVal,
+        message:
+          appointments.length > 0
+            ? 'Appointment details fetched successfully!'
+            : 'No appointments found.',
+      };
+    } catch (error) {
+      throw new error;
     }
   }
 }
