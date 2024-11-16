@@ -1,12 +1,9 @@
 import {
+  BadRequestException,
   Body,
-  ConflictException,
   Controller,
   Delete,
   Get,
-  HttpException,
-  HttpStatus,
-  InternalServerErrorException,
   Post,
   Req,
   Res,
@@ -19,10 +16,8 @@ import { AuthService } from './auth.service';
 import { CreateUserDto } from '../dto/createUser.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import { ApiError } from 'src/utils/ApiError';
 import { JwtAuthGuard } from 'src/guard/jwt.guard';
 import { SetCookiesInterceptor } from 'src/interceptor/set-cookies.interceptor';
-import { ApiResponse } from 'src/utils/ApiResponse';
 import { ClearCookiesInterceptor } from 'src/interceptor/clear-cookies.interceptor';
 
 @Controller('auth')
@@ -33,8 +28,7 @@ export class AuthController {
   @Post('register')
   async register(@Body() createUserDto: CreateUserDto) {
     try {
-      const result = await this.authService.createUser(createUserDto);
-      return new ApiResponse(201, result.user, result.message);
+      return await this.authService.createUser(createUserDto);
     } catch (error) {
       throw error;
     }
@@ -45,7 +39,7 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto) {
     try {
       if (!loginDto) {
-        throw new ApiError(400, 'All fields are required');
+        throw new BadRequestException('All fields are required');
       }
 
       return await this.authService.loginUser(loginDto);

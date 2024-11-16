@@ -122,25 +122,34 @@ export class DoctorService {
     }
   }
 
-  async searchDoctorByName(name: string) {
+  async searchDoctor(query: string) {
     try {
-      let query: any;
+      let searchQuery: any;
 
-      if (mongoose.Types.ObjectId.isValid(name)) {
-        query = { _id: name };
+      if (
+        mongoose.Types.ObjectId.isValid(query) &&
+        /^[a-fA-F0-9]{24}$/.test(query)
+      ) {
+        searchQuery = { _id: query };
       } else {
-        query = { name: { $regex: name, $options: 'i' } };
+        const regexQuery = new RegExp(query.split(' ').join('|'), 'i');
+        searchQuery = {
+          $or: [{ name: regexQuery }, { category: regexQuery }],
+        };
       }
-      const doctor = await this.doctorModel
-        .findOne(query)
-        .select('-password -refreshToken -appointments');
 
-      if (!doctor) {
-        throw new NotFoundException('Doctor does not exist!');
+      const doctors = await this.doctorModel
+        .find(searchQuery)
+        .select('-password -refreshToken -appointments')
+        .lean()
+        .exec();
+
+      if (!doctors || doctors.length === 0) {
+        throw new NotFoundException('No doctors found!');
       }
 
       return {
-        doctor,
+        doctors,
         message: 'Doctor details fetched successfully!',
       };
     } catch (error) {

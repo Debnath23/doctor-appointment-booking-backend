@@ -1,13 +1,9 @@
 import {
   BadRequestException,
   Body,
-  ConflictException,
   Controller,
   Delete,
   Get,
-  HttpException,
-  HttpStatus,
-  InternalServerErrorException,
   NotFoundException,
   Param,
   Post,
@@ -22,7 +18,6 @@ import { JwtAuthGuard } from 'src/guard/jwt.guard';
 import { Request } from 'express';
 import { SetCookiesInterceptor } from 'src/interceptor/set-cookies.interceptor';
 import { LoginDto } from 'src/dto/login.dto';
-import { ApiError } from 'src/utils/ApiError';
 import { isValidObjectId, Types } from 'mongoose';
 
 @Controller('doctor')
@@ -35,7 +30,7 @@ export class DoctorController {
   async login(@Body() loginDto: LoginDto) {
     try {
       if (!loginDto) {
-        throw new ApiError(400, 'All fields are required');
+        throw new BadRequestException('All fields are required');
       }
 
       return await this.doctorService.loginDoctor(loginDto);
@@ -69,9 +64,9 @@ export class DoctorController {
   }
 
   @Get('/search')
-  async searchDoctor(@Query('name') name: string) {
+  async searchDoctor(@Query('query') query: string) {
     try {
-      return await this.doctorService.searchDoctorByName(name);
+      return await this.doctorService.searchDoctor(query);
     } catch (error) {
       throw error;
     }

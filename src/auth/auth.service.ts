@@ -11,7 +11,6 @@ import { Model, Types } from 'mongoose';
 import { CreateUserDto } from '../dto/createUser.dto';
 import { LoginDto } from '../dto/login.dto';
 import { UserEntity } from '../entities/user.entity';
-import { ApiError } from 'src/utils/ApiError';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +22,7 @@ export class AuthService {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
-        throw new ApiError(404, 'User not found');
+        throw new NotFoundException('User not found!');
       }
 
       const accessToken = user.generateAccessToken();

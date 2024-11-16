@@ -1,5 +1,4 @@
 import { Document, Types } from 'mongoose';
-import { BookAppointmentDto } from 'src/dto/bookAppointment.dto';
 
 export interface UserInterface extends Document {
   name: string;
