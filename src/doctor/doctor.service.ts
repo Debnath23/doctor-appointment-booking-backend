@@ -159,30 +159,35 @@ export class DoctorService {
 
   async doctorAppointmentDetailsService(docId: Types.ObjectId) {
     try {
-      const doctor = await this.doctorModel.findById(docId);
-
-      if (!doctor) {
-        throw new NotFoundException('User does not exist!');
+      if (!Types.ObjectId.isValid(docId)) {
+        throw new NotFoundException('Invalid doctor ID');
       }
-
+  
+      const doctor = await this.doctorModel.findById(docId);
+  
+      if (!doctor) {
+        throw new NotFoundException('Doctor does not exist!');
+      }
+  
       const appointments = await this.appointmentModel
         .find({ doctorId: doctor._id })
         .populate('userId', 'name phone gender dob')
         .sort({ appointmentDate: -1 });
-
+  
       if (!appointments || appointments.length === 0) {
         throw new NotFoundException('No appointments found!');
       }
-
+  
       return {
         appointments,
         message: 'Appointment details fetched successfully!',
       };
     } catch (error) {
+      console.error('Error in doctorAppointmentDetailsService:', error);
       throw error;
     }
   }
-
+  
   async cancelAppointmentService(
     appointment_id: Types.ObjectId,
     doctor_id: Types.ObjectId,

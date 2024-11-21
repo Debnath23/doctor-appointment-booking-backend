@@ -19,6 +19,8 @@ import { Request } from 'express';
 import { SetCookiesInterceptor } from 'src/interceptor/set-cookies.interceptor';
 import { LoginDto } from 'src/dto/login.dto';
 import { isValidObjectId, Types } from 'mongoose';
+import { DoctorEntity } from 'src/entities/doctor.entity';
+import { DoctorAuthGuard } from 'src/guard/doctor.gurad';
 
 @Controller('doctor')
 @ApiTags('Doctor')
@@ -73,20 +75,23 @@ export class DoctorController {
   }
 
   @Get('appointment-details')
-  @UseGuards(JwtAuthGuard)
-  async doctorAppointmentDetails(@Req() req: Request) {
-    try {
-      if (!req.user || !req.user._id) {
-        throw new NotFoundException('Doctor not found!');
-      }
+@UseGuards(DoctorAuthGuard)
+async doctorAppointmentDetails(@Req() req: Request) {
+  try {
+    console.log('Request user:', req.user);
 
-      const docId = req.user._id as Types.ObjectId;
-
-      return await this.doctorService.doctorAppointmentDetailsService(docId);
-    } catch (error) {
-      throw error;
+    if (!req.user || !(req.user as DoctorEntity)._id) {
+      throw new NotFoundException('Doctor not found!');
     }
+
+    const docId = (req.user as DoctorEntity)._id;
+    return await this.doctorService.doctorAppointmentDetailsService(docId);
+  } catch (error) {
+    console.error('Error in doctorAppointmentDetails:', error);
+    throw error;
   }
+}
+
 
   @Delete('cancel-appointment')
   @UseGuards(JwtAuthGuard)
