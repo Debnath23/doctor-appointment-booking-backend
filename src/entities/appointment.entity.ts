@@ -27,10 +27,10 @@ export class AppointmentEntity {
   @Prop({ required: true })
   appointmentTime: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, default: '100' })
   amountToPay: string;
 
-  @Prop({ required: true, enum: ['online', 'cash'] })
+  @Prop({ required: true, default: 'online', enum: ['online', 'cash'] })
   paymentType: string;
 
   @Prop({ default: 'pending', enum: ['completed', 'pending'] })
