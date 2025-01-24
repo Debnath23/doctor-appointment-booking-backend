@@ -4,10 +4,11 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { envOptions } from './config/envOptions';
-import { UserModule } from './user/user.module';
-import { DoctorModule } from './doctor/doctor.module';
-import { AuthModule } from './auth/auth.module';
-import { AdminModule } from './admin/admin.module';
+import { UserModule } from './modules/user/user.module';
+import { DoctorModule } from './modules/doctor/doctor.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { RazorpayModule } from './modules/razorpay/razorpay.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AdminModule } from './admin/admin.module';
     DoctorModule,
     AuthModule,
     AdminModule,
+    RazorpayModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -8,9 +8,9 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Response } from 'express';
 import { Model, Types } from 'mongoose';
-import { CreateUserDto } from '../dto/createUser.dto';
-import { LoginDto } from '../dto/login.dto';
-import { UserEntity } from '../entities/user.entity';
+import { CreateUserDto } from '../../dto/createUser.dto';
+import { LoginDto } from '../../dto/login.dto';
+import { UserEntity } from '../../entities/user.entity';
 
 @Injectable()
 export class AuthService {

@@ -6,6 +6,12 @@ import {
   SwaggerCustomOptions,
 } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import Razorpay from 'razorpay';
+
+export const instanceOfRazorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_TEST_KEY_ID,
+  key_secret: process.env.RAZORPAY_TEST_KEY_SECRET,
+})
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

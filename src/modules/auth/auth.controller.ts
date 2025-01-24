@@ -11,9 +11,9 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { LoginDto } from '../dto/login.dto';
+import { LoginDto } from '../../dto/login.dto';
 import { AuthService } from './auth.service';
-import { CreateUserDto } from '../dto/createUser.dto';
+import { CreateUserDto } from '../../dto/createUser.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { JwtAuthGuard } from 'src/guard/jwt.guard';

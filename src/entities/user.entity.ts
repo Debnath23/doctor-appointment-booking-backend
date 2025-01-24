@@ -4,7 +4,6 @@ import { Document, Types } from 'mongoose';
 import * as jwt from 'jsonwebtoken';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { UserInterface } from '../interfaces/user.interface';
-import { BookAppointmentDto } from 'src/dto/bookAppointment.dto';
 
 @Schema({ timestamps: true })
 export class UserEntity extends Document implements UserInterface {
@@ -38,6 +37,14 @@ export class UserEntity extends Document implements UserInterface {
     trim: true,
   })
   gender?: string;
+
+  @Prop({
+    required: false,
+    enum: ['A+', 'B+', 'AB+', 'O+', 'A-', 'B-', 'AB-', 'O-'],
+    uppercase: true,
+    trim: true,
+  })
+  bloodGroup?: string;
 
   @Prop({ required: false })
   dob?: string;

@@ -13,4 +13,12 @@ export class BookAppointmentDto {
   @ApiProperty({ required: true })
   @IsString()
   readonly appointmentTime: string;
+
+  @ApiProperty({ required: true })
+  @IsString()
+  readonly amountToPay: string;
+
+  @ApiProperty({ required: true })
+  @IsString()
+  readonly paymentType: string;
 }

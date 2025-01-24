@@ -5,10 +5,20 @@ import { Types } from 'mongoose';
 export class AppointmentEntity {
   _id: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'UserEntity', required: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'UserEntity',
+    required: true,
+    index: true,
+  })
   userId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'DoctorEntity', required: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'DoctorEntity',
+    required: true,
+    index: true,
+  })
   doctorId: Types.ObjectId;
 
   @Prop({ required: true })
@@ -16,6 +26,21 @@ export class AppointmentEntity {
 
   @Prop({ required: true })
   appointmentTime: string;
+
+  @Prop({ required: true })
+  amountToPay: string;
+
+  @Prop({ required: true, enum: ['online', 'cash'] })
+  paymentType: string;
+
+  @Prop({ default: 'pending', enum: ['completed', 'pending'] })
+  paymentStatus: string;
+
+  @Prop()
+  payment_id?: string;
+
+  @Prop()
+  secret_id?: string;
 }
 
 const AppointmentEntitySchema = SchemaFactory.createForClass(AppointmentEntity);
