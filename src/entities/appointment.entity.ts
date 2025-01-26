@@ -27,7 +27,7 @@ export class AppointmentEntity {
   @Prop({ required: true })
   appointmentTime: string;
 
-  @Prop({ required: true, default: '100' })
+  @Prop({ required: true })
   amountToPay: string;
 
   @Prop({ required: true, default: 'online', enum: ['online', 'cash'] })
@@ -37,10 +37,13 @@ export class AppointmentEntity {
   paymentStatus: string;
 
   @Prop()
-  payment_id?: string;
+  signature?: string;
 
   @Prop()
-  secret_id?: string;
+  paymentId?: string;
+
+  @Prop()
+  orderId?: string;
 }
 
 const AppointmentEntitySchema = SchemaFactory.createForClass(AppointmentEntity);

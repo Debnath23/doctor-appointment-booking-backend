@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -10,6 +11,10 @@ import { AppointmentEntity } from 'src/entities/appointment.entity';
 import { UserEntity } from 'src/entities/user.entity';
 import { instanceOfRazorpay } from 'src/utils/instance';
 import nodemailer from 'nodemailer';
+import { PaymentDto } from 'src/dto/payment.dto';
+import { validatePaymentVerification } from 'razorpay/dist/utils/razorpay-utils';
+import * as crypto from 'crypto';
+import { Response } from 'express';
 
 @Injectable()
 export class RazorpayService {
@@ -19,12 +24,128 @@ export class RazorpayService {
     private appointmentModel: Model<AppointmentEntity>,
   ) {}
 
-  async checkoutService(userId: Types.ObjectId, appointmentId: Types.ObjectId) {
+  async checkoutService(
+    appointmentId: Types.ObjectId,
+    paymentDto: PaymentDto,
+    userId: Types.ObjectId,
+  ) {
     try {
       const user = await this.userModel.findById(userId);
       if (!user) {
-        console.error('User not found!');
         throw new NotFoundException('User does not exist!');
+      }
+
+      const appointment = await this.appointmentModel.findById(appointmentId);
+      if (!appointment) {
+        throw new UnprocessableEntityException('Appointment not found!');
+      }
+
+      if (!user._id.equals(appointment.userId)) {
+        throw new ForbiddenException(
+          'You are not authorized to process this payment.',
+        );
+      }
+
+      if (appointment.paymentType !== 'online') {
+        throw new UnprocessableEntityException(
+          'Payment type is not valid for online payments.',
+        );
+      }
+
+      const amount = Number(paymentDto.amountToPay);
+      if (!Number.isInteger(amount) || amount <= 0) {
+        throw new UnprocessableEntityException('Invalid payment amount.');
+      }
+
+      const options = {
+        amount,
+        currency: 'INR',
+        receipt: `${appointment._id}`,
+      };
+
+      let paymentOrder: any;
+      try {
+        paymentOrder = await instanceOfRazorpay.orders.create(options);
+        if (!paymentOrder) {
+          throw new Error('Failed to create Razorpay payment order.');
+        }
+      } catch (razorpayError) {
+        console.error('Error creating Razorpay order:', razorpayError);
+        throw new UnprocessableEntityException(
+          'Failed to process the payment order.',
+        );
+      }
+
+      await this.appointmentModel.findByIdAndUpdate(
+        appointment._id,
+        {
+          paymentStatus: 'pending',
+          payment_id: paymentOrder.id,
+          secret_id: paymentOrder.id,
+        },
+        { new: true },
+      );
+
+      this.sendPaymentConfirmationEmail(
+        (user.email = 'debnathmahapatra740@gmail.com'),
+        appointment,
+      );
+
+      return {
+        payment: paymentOrder,
+        key: process.env.RAZORPAY_TEST_KEY_ID,
+        message: 'Payment initiated successfully. Await confirmation.',
+      };
+    } catch (error) {
+      console.error('Error during checkout:', error);
+      throw new InternalServerErrorException(
+        'An error occurred during checkout.',
+      );
+    }
+  }
+
+  private async sendPaymentConfirmationEmail(email: string, appointment: any) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: 'live.smtp.mailtrap.io',
+        port: 587,
+        auth: {
+          user: process.env.MAILTRAP_USER,
+          pass: process.env.MAILTRAP_PASS,
+        },
+      });
+
+      await transporter.sendMail({
+        from: '"Bookify" <noreply@demomailtrap.com>',
+        to: email,
+        subject: 'Payment Confirmation - Bookify',
+        text: `
+          Payment Initiated Successfully!
+  
+          Appointment Details:
+          Appointment Date : ${appointment.appointmentDate.toLocaleDateString()}
+          Appointment Time : ${appointment.appointmentTime}
+  
+          Thank you for choosing Bookify!
+        `.trim(),
+      });
+    } catch (emailError) {
+      console.error('Error sending payment confirmation email:', emailError);
+    }
+  }
+
+  async verifyPaymentService(
+    appointmentId: Types.ObjectId,
+    userId: Types.ObjectId,
+    razorpaySignature: string,
+    razorpayOrderId: string,
+    razorpayPaymentId: string,
+    res: Response,
+  ) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new NotFoundException('User does not exist.');
       }
 
       const appointment = await this.appointmentModel.findById(appointmentId);
@@ -36,77 +157,57 @@ export class RazorpayService {
 
       if (!user._id.equals(appointment.userId)) {
         throw new ForbiddenException(
-          'Sorry, this payment process is forbidden for you.',
+          'Payment verification is not allowed for this user.',
         );
       }
 
-      if (appointment.paymentType !== 'online') {
-        console.error('Invalid payment type!');
-        throw new UnprocessableEntityException('Invalid payment type.');
+      const isSignatureValid = validatePaymentVerification(
+        { order_id: razorpayOrderId, payment_id: razorpayPaymentId },
+        razorpaySignature,
+        process.env.RAZORPAY_TEST_KEY_SECRET,
+      );
+
+      if (!isSignatureValid) {
+        throw new UnprocessableEntityException(
+          'Invalid payment signature verification.',
+        );
       }
 
-      const options = {
-        amount: Number(appointment.amountToPay),
-        currency: 'INR',
-        receipt: `${appointment._id}`,
+      const generatedSignature = crypto
+        .createHmac('sha512', process.env.RAZORPAY_TEST_KEY_SECRET)
+        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+        .digest('hex');
+
+      if (
+        !crypto.timingSafeEqual(
+          Buffer.from(generatedSignature),
+          Buffer.from(razorpaySignature),
+        )
+      ) {
+        throw new UnprocessableEntityException(
+          'Invalid payment signature (timing-safe).',
+        );
+      }
+
+      await this.appointmentModel.findByIdAndUpdate(
+        appointmentId,
+        {
+          signature: razorpaySignature,
+          paymentId: razorpayPaymentId,
+          orderId: razorpayOrderId,
+          paymentStatus: 'completed',
+        },
+        { new: true },
+      );
+
+      console.log('Payment verified successfully!');
+      res.status(200).send('Payment verified successfully!');
+      return {
+        message: 'Payment verified successfully!',
       };
-
-      if (!Number.isInteger(options.amount) || options.amount <= 0) {
-        throw new UnprocessableEntityException('Invalid payment amount.');
-      }
-
-      let payment: any;
-      try {
-        payment = await instanceOfRazorpay.orders.create(options);
-        if (!payment) {
-          throw new Error('Failed to create payment order.');
-        }
-      } catch (razorpayError) {
-        throw new Error(
-          razorpayError.message ||
-            JSON.stringify(razorpayError) ||
-            'Failed to create payment order.',
-        );
-      }
-
-      await this.appointmentModel.findByIdAndUpdate(appointment._id, {
-        paymentStatus: 'completed',
-        payment_id: payment.id,
-        secret_id: payment.id,
-      });
-
-      if (payment) {
-        const transporter = nodemailer.createTransport({
-          host: 'live.smtp.mailtrap.io',
-          port: 587,
-          auth: {
-            user: process.env.MAILTRAP_USER,
-            pass: process.env.MAILTRAP_PASS,
-          },
-        });
-
-        await transporter.sendMail({
-          from: '"Bookify" <noreply@demomailtrap.com>',
-          to: user.email,
-          subject: 'Payment Confirmation - Bookify',
-          text: `
-Payment Completed Successfully!
-
-Appointment Details:
-Appointment Date : ${appointment.appointmentDate.toLocaleDateString()}
-Appointment Time : ${appointment.appointmentTime}
-
-Thank you for choosing Bookify!
-          `.trim(),
-        });
-      }
-
-      return { message: 'Payment completed successfully!' };
     } catch (error) {
       throw new Error(
-        error.message ||
-          JSON.stringify(error) ||
-          'An error occurred during checkout.',
+        error.message || 'An error occurred while verifying payment.',
       );
     }
   }

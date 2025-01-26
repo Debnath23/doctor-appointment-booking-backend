@@ -1,16 +1,20 @@
 import {
+  Body,
   Controller,
   NotFoundException,
   Post,
   Query,
   Req,
+  Res,
+  UnprocessableEntityException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { RazorpayService } from './razorpay.service';
 import { JwtAuthGuard } from 'src/guard/jwt.guard';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { Types } from 'mongoose';
+import { PaymentDto } from 'src/dto/payment.dto';
 
 @Controller('razorpay')
 @ApiTags('Payment Gateway')
@@ -21,6 +25,7 @@ export class RazorpayController {
   @UseGuards(JwtAuthGuard)
   async userDetails(
     @Query('appointment_id') appointment_id: string,
+    @Body() paymentDto: PaymentDto,
     @Req() req: Request,
   ) {
     try {
@@ -28,18 +33,70 @@ export class RazorpayController {
         throw new NotFoundException('User not found!');
       }
 
+      if (!appointment_id) {
+        throw new UnprocessableEntityException('Appointment ID is required.');
+      }
+
+      if (!paymentDto) {
+        throw new UnprocessableEntityException('Payment amount is required.');
+      }
+
       const userId = req.user._id;
       const appointmentObjId = new Types.ObjectId(appointment_id);
 
       const response = await this.razorpayService.checkoutService(
-        userId,
         appointmentObjId,
+        paymentDto,
+        userId,
       );
 
       return response;
     } catch (error) {
       throw new Error(
         error.message || 'An error occurred while fetching user details.',
+      );
+    }
+  }
+
+  @Post('verify')
+  @UseGuards(JwtAuthGuard)
+  async verifyPayment(
+    @Query('appointment_id') appointment_id: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    try {
+      if (!req.user) {
+        throw new NotFoundException('User not found!');
+      }
+
+      if (!appointment_id) {
+        throw new UnprocessableEntityException('Appointment ID is required.');
+      }
+
+      if (!req.body) {
+        throw new UnprocessableEntityException('Payment details are required.');
+      }
+
+      const userId = req.user._id;
+      const appointmentObjId = new Types.ObjectId(appointment_id);
+
+      const { razorpaySignature, razorpayOrderId, razorpayPaymentId } =
+        req.body;
+
+      const response = await this.razorpayService.verifyPaymentService(
+        appointmentObjId,
+        userId,
+        razorpaySignature,
+        razorpayOrderId,
+        razorpayPaymentId,
+        res,
+      );
+
+      return response;
+    } catch (error) {
+      throw new Error(
+        error.message || 'An error occurred while verifying payment.',
       );
     }
   }
