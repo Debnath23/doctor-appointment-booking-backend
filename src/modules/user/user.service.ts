@@ -42,6 +42,8 @@ export class UserService {
         doctorId: bookAppointmentDto.doctorId,
         appointmentDate: bookAppointmentDto.appointmentDate,
         appointmentTime: bookAppointmentDto.appointmentTime,
+        amountToPay: bookAppointmentDto.amountToPay,
+        paymentType: bookAppointmentDto.paymentType,
       });
 
       if (existingAppointment) {

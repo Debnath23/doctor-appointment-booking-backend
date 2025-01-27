@@ -63,9 +63,11 @@ export class RazorpayController {
   async verifyPayment(
     @Query('appointment_id') appointment_id: string,
     @Req() req: Request,
-    @Res() res: Response,
+    @Body() body: any
   ) {
     try {
+      console.log('verifyPayment............');
+      
       if (!req.user) {
         throw new NotFoundException('User not found!');
       }
@@ -81,16 +83,15 @@ export class RazorpayController {
       const userId = req.user._id;
       const appointmentObjId = new Types.ObjectId(appointment_id);
 
-      const { razorpaySignature, razorpayOrderId, razorpayPaymentId } =
-        req.body;
+      const { razorpay_signature, razorpay_order_id, razorpay_payment_id } =
+        body;
 
       const response = await this.razorpayService.verifyPaymentService(
         appointmentObjId,
         userId,
-        razorpaySignature,
-        razorpayOrderId,
-        razorpayPaymentId,
-        res,
+        razorpay_signature,
+        razorpay_order_id,
+        razorpay_payment_id,
       );
 
       return response;

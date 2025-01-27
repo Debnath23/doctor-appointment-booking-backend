@@ -140,9 +140,18 @@ export class RazorpayService {
     razorpaySignature: string,
     razorpayOrderId: string,
     razorpayPaymentId: string,
-    res: Response,
   ) {
     try {
+      console.log('Verifying payment...');
+
+      console.log('Request body:', {
+        appointmentId,
+        userId,
+        razorpaySignature,
+        razorpayOrderId,
+        razorpayPaymentId,
+      });
+
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new NotFoundException('User does not exist.');
@@ -167,41 +176,58 @@ export class RazorpayService {
         process.env.RAZORPAY_TEST_KEY_SECRET,
       );
 
+      console.log('Is signature valid:', isSignatureValid);
+
       if (!isSignatureValid) {
         throw new UnprocessableEntityException(
           'Invalid payment signature verification.',
         );
       }
 
-      const generatedSignature = crypto
-        .createHmac('sha512', process.env.RAZORPAY_TEST_KEY_SECRET)
-        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-        .digest('hex');
+      // const generatedSignature = crypto
+      //   .createHmac('sha512', process.env.RAZORPAY_TEST_KEY_SECRET)
+      //   .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+      //   .digest('hex');
 
-      if (
-        !crypto.timingSafeEqual(
-          Buffer.from(generatedSignature),
-          Buffer.from(razorpaySignature),
-        )
-      ) {
-        throw new UnprocessableEntityException(
-          'Invalid payment signature (timing-safe).',
+      // const trimmedSignature = razorpaySignature.trim();
+      // const generatedSignatureBuffer = Buffer.from(generatedSignature, 'utf-8');
+      // const razorpaySignatureBuffer = Buffer.from(trimmedSignature, 'utf-8');
+
+      // if (generatedSignatureBuffer.length !== razorpaySignatureBuffer.length) {
+      //   throw new UnprocessableEntityException(
+      //     'Invalid payment signature: Buffer lengths do not match.',
+      //   );
+      // }
+
+      // if (
+      //   !crypto.timingSafeEqual(
+      //     generatedSignatureBuffer,
+      //     razorpaySignatureBuffer,
+      //   )
+      // ) {
+      //   throw new UnprocessableEntityException(
+      //     'Invalid payment signature (timing-safe).',
+      //   );
+      // }
+
+      const paymentCompletedAppointment =
+        await this.appointmentModel.findByIdAndUpdate(
+          appointmentId,
+          {
+            signature: razorpaySignature,
+            paymentId: razorpayPaymentId,
+            orderId: razorpayOrderId,
+            paymentStatus: 'completed',
+          },
+          { new: true },
         );
-      }
 
-      await this.appointmentModel.findByIdAndUpdate(
-        appointmentId,
-        {
-          signature: razorpaySignature,
-          paymentId: razorpayPaymentId,
-          orderId: razorpayOrderId,
-          paymentStatus: 'completed',
-        },
-        { new: true },
+      console.log(
+        'Payment completed appointment:',
+        paymentCompletedAppointment,
       );
 
       console.log('Payment verified successfully!');
-      res.status(200).send('Payment verified successfully!');
       return {
         message: 'Payment verified successfully!',
       };
