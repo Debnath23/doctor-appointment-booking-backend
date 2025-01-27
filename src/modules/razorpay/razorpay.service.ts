@@ -14,7 +14,6 @@ import nodemailer from 'nodemailer';
 import { PaymentDto } from 'src/dto/payment.dto';
 import { validatePaymentVerification } from 'razorpay/dist/utils/razorpay-utils';
 import * as crypto from 'crypto';
-import { Response } from 'express';
 
 @Injectable()
 export class RazorpayService {
@@ -142,16 +141,6 @@ export class RazorpayService {
     razorpayPaymentId: string,
   ) {
     try {
-      console.log('Verifying payment...');
-
-      console.log('Request body:', {
-        appointmentId,
-        userId,
-        razorpaySignature,
-        razorpayOrderId,
-        razorpayPaymentId,
-      });
-
       const user = await this.userModel.findById(userId);
       if (!user) {
         throw new NotFoundException('User does not exist.');
@@ -175,8 +164,6 @@ export class RazorpayService {
         razorpaySignature,
         process.env.RAZORPAY_TEST_KEY_SECRET,
       );
-
-      console.log('Is signature valid:', isSignatureValid);
 
       if (!isSignatureValid) {
         throw new UnprocessableEntityException(
@@ -210,24 +197,17 @@ export class RazorpayService {
       //   );
       // }
 
-      const paymentCompletedAppointment =
-        await this.appointmentModel.findByIdAndUpdate(
-          appointmentId,
-          {
-            signature: razorpaySignature,
-            paymentId: razorpayPaymentId,
-            orderId: razorpayOrderId,
-            paymentStatus: 'completed',
-          },
-          { new: true },
-        );
-
-      console.log(
-        'Payment completed appointment:',
-        paymentCompletedAppointment,
+      await this.appointmentModel.findByIdAndUpdate(
+        appointmentId,
+        {
+          signature: razorpaySignature,
+          paymentId: razorpayPaymentId,
+          orderId: razorpayOrderId,
+          paymentStatus: 'completed',
+        },
+        { new: true },
       );
 
-      console.log('Payment verified successfully!');
       return {
         message: 'Payment verified successfully!',
       };

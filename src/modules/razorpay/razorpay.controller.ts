@@ -5,14 +5,13 @@ import {
   Post,
   Query,
   Req,
-  Res,
   UnprocessableEntityException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { RazorpayService } from './razorpay.service';
 import { JwtAuthGuard } from 'src/guard/jwt.guard';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { Types } from 'mongoose';
 import { PaymentDto } from 'src/dto/payment.dto';
 
@@ -63,11 +62,9 @@ export class RazorpayController {
   async verifyPayment(
     @Query('appointment_id') appointment_id: string,
     @Req() req: Request,
-    @Body() body: any
+    @Body() body: any,
   ) {
     try {
-      console.log('verifyPayment............');
-      
       if (!req.user) {
         throw new NotFoundException('User not found!');
       }
