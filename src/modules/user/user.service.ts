@@ -33,6 +33,7 @@ export class UserService {
       const existingDoctor = await this.doctorModel.findById(
         bookAppointmentDto.doctorId,
       );
+
       if (!existingDoctor) {
         throw new NotFoundException('Doctor does not exist!');
       }
@@ -42,8 +43,6 @@ export class UserService {
         doctorId: bookAppointmentDto.doctorId,
         appointmentDate: bookAppointmentDto.appointmentDate,
         appointmentTime: bookAppointmentDto.appointmentTime,
-        amountToPay: bookAppointmentDto.amountToPay,
-        paymentType: bookAppointmentDto.paymentType,
       });
 
       if (existingAppointment) {
@@ -57,6 +56,7 @@ export class UserService {
         doctorId: bookAppointmentDto.doctorId,
         appointmentDate: bookAppointmentDto.appointmentDate,
         appointmentTime: bookAppointmentDto.appointmentTime,
+        amountToPay: bookAppointmentDto.amountToPay,
       });
 
       await appointment.save();

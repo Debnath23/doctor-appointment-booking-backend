@@ -11,7 +11,6 @@ import { AppointmentEntity } from 'src/entities/appointment.entity';
 import { UserEntity } from 'src/entities/user.entity';
 import { instanceOfRazorpay } from 'src/utils/instance';
 import nodemailer from 'nodemailer';
-import { PaymentDto } from 'src/dto/payment.dto';
 import { validatePaymentVerification } from 'razorpay/dist/utils/razorpay-utils';
 import * as crypto from 'crypto';
 
@@ -25,7 +24,7 @@ export class RazorpayService {
 
   async checkoutService(
     appointmentId: Types.ObjectId,
-    paymentDto: PaymentDto,
+    amountToPay: string,
     userId: Types.ObjectId,
   ) {
     try {
@@ -34,7 +33,10 @@ export class RazorpayService {
         throw new NotFoundException('User does not exist!');
       }
 
-      const appointment = await this.appointmentModel.findById(appointmentId);
+      const appointment = await this.appointmentModel.findOne({
+        _id: appointmentId,
+      });
+
       if (!appointment) {
         throw new UnprocessableEntityException('Appointment not found!');
       }
@@ -45,19 +47,13 @@ export class RazorpayService {
         );
       }
 
-      if (appointment.paymentType !== 'online') {
-        throw new UnprocessableEntityException(
-          'Payment type is not valid for online payments.',
-        );
-      }
-
-      const amount = Number(paymentDto.amountToPay);
+      const amount = Number(amountToPay);
       if (!Number.isInteger(amount) || amount <= 0) {
         throw new UnprocessableEntityException('Invalid payment amount.');
       }
 
       const options = {
-        amount,
+        amount: amount * 100,
         currency: 'INR',
         receipt: `${appointment._id}`,
       };
@@ -69,7 +65,6 @@ export class RazorpayService {
           throw new Error('Failed to create Razorpay payment order.');
         }
       } catch (razorpayError) {
-        console.error('Error creating Razorpay order:', razorpayError);
         throw new UnprocessableEntityException(
           'Failed to process the payment order.',
         );
@@ -204,6 +199,7 @@ export class RazorpayService {
           paymentId: razorpayPaymentId,
           orderId: razorpayOrderId,
           paymentStatus: 'completed',
+          paymentType: 'Online',
         },
         { new: true },
       );

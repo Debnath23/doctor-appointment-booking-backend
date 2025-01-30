@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  InternalServerErrorException,
   NotFoundException,
   Post,
   Query,
@@ -22,37 +24,34 @@ export class RazorpayController {
 
   @Post('checkout')
   @UseGuards(JwtAuthGuard)
-  async userDetails(
-    @Query('appointment_id') appointment_id: string,
-    @Body() paymentDto: PaymentDto,
-    @Req() req: Request,
-  ) {
+  async userDetails(@Body() paymentDto: PaymentDto, @Req() req: Request) {
     try {
       if (!req.user) {
         throw new NotFoundException('User not found!');
       }
 
-      if (!appointment_id) {
-        throw new UnprocessableEntityException('Appointment ID is required.');
-      }
-
       if (!paymentDto) {
-        throw new UnprocessableEntityException('Payment amount is required.');
+        throw new UnprocessableEntityException('Invalid payment details.');
       }
 
-      const userId = req.user._id;
-      const appointmentObjId = new Types.ObjectId(appointment_id);
+      if (!Types.ObjectId.isValid(paymentDto.appointmentId)) {
+        throw new BadRequestException('Invalid Appointment ID format');
+      }
+
+      const userId = new Types.ObjectId(req.user._id);
+      const appointmentObjId = new Types.ObjectId(paymentDto.appointmentId);
+      const amountToPay = paymentDto.amountToPay;
 
       const response = await this.razorpayService.checkoutService(
         appointmentObjId,
-        paymentDto,
+        amountToPay,
         userId,
       );
 
       return response;
     } catch (error) {
-      throw new Error(
-        error.message || 'An error occurred while fetching user details.',
+      throw new InternalServerErrorException(
+        error.message || 'An error occurred during checkout.',
       );
     }
   }
