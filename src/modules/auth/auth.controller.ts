@@ -4,6 +4,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Post,
   Req,
   Res,
@@ -19,6 +21,8 @@ import { Request, Response } from 'express';
 import { JwtAuthGuard } from 'src/guard/jwt.guard';
 import { SetCookiesInterceptor } from 'src/interceptor/set-cookies.interceptor';
 import { ClearCookiesInterceptor } from 'src/interceptor/clear-cookies.interceptor';
+import * as jwt from 'jsonwebtoken';
+import { Types } from 'mongoose';
 
 @Controller('auth')
 @ApiTags('Authentication')
@@ -67,5 +71,30 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async verifyToken(@Req() req: Request) {
     return { isValid: true, user: req.user };
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getMe(@Req() req: Request, @Res() res: Response) {
+    try {
+      const token = req.cookies.accessToken;
+      if (!token) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
+        userId: string;
+      };
+      if (!decoded || !decoded.userId) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
+
+      const objectId = new Types.ObjectId(decoded.userId);
+
+      const user = await this.authService.getMe(objectId);
+      return res.json(user);
+    } catch (error) {
+      return res.status(401).json({ isAuthenticated: false });
+    }
   }
 }

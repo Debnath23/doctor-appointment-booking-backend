@@ -116,11 +116,11 @@ export class RazorpayService {
         text: `
           Payment Initiated Successfully!
   
-          Appointment Details:
-          Appointment Date : ${appointment.appointmentDate.toLocaleDateString()}
-          Appointment Time : ${appointment.appointmentTime}
+Appointment Details:
+Appointment Date : ${appointment.appointmentDate.toLocaleDateString()}
+Appointment Time : ${appointment.appointmentTime}
   
-          Thank you for choosing Bookify!
+Thank you for choosing Bookify!
         `.trim(),
       });
     } catch (emailError) {

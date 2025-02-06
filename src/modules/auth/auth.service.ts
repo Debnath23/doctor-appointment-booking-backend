@@ -1,5 +1,7 @@
 import {
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -130,6 +132,22 @@ export class AuthService {
       return { success: true, message: 'User logged out successfully' };
     } catch (error) {
       throw error;
+    }
+  }
+
+  async getMe(userId: Types.ObjectId) {
+    try {
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+
+      return { isAuthenticated: true };
+    } catch (error) {
+      throw new HttpException(
+        'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
