@@ -34,25 +34,19 @@ export class JwtAuthGuard implements CanActivate {
         secret: process.env.ACCESS_TOKEN_SECRET,
       });
 
-      let userOrDoctor = null;
+      const objectId = new Types.ObjectId(decodedToken._id);
 
-      const user = await this.userModel
-        .findById(decodedToken._id)
-        .select('-password -appointments -refreshToken');
-
-      if (user) {
-        userOrDoctor = user;
-      } else {
-        const doctor = await this.doctorModel
-          .findById(decodedToken._id as Types.ObjectId)
+      const userOrDoctor =
+        (await this.userModel
+          .findOne({ _id: objectId })
+          .select('-password -appointments -refreshToken')
+          .lean()) ||
+        (await this.doctorModel
+          .findOne({ _id: objectId })
           .select(
             '-password -refreshToken -appointments -profileImg -degree -speciality -experience -about -fees -createdAt -updatedAt -__v',
-          );
-
-        if (doctor) {
-          userOrDoctor = doctor;
-        }
-      }
+          )
+          .lean());
 
       if (!userOrDoctor) {
         throw new HttpException(
@@ -64,15 +58,17 @@ export class JwtAuthGuard implements CanActivate {
       request['user'] = userOrDoctor;
       return true;
     } catch (error) {
-      throw error;
+      throw new HttpException(
+        'Invalid or Expired Token',
+        HttpStatus.UNAUTHORIZED,
+      );
     }
   }
 
   private extractTokenFromRequest(request: Request): string | undefined {
-    const tokenFromCookie = request.cookies?.accessToken;
-    const tokenFromHeader = request
-      .header('Authorization')
-      ?.replace('Bearer ', '');
-    return tokenFromCookie || tokenFromHeader;
+    return (
+      request.cookies?.accessToken ||
+      request.header('Authorization')?.replace('Bearer ', '')
+    );
   }
 }
