@@ -10,7 +10,6 @@ export class UserEntity extends Document implements UserInterface {
   @Prop({
     unique: true,
     required: true,
-    lowercase: true,
     trim: true,
     index: true,
   })

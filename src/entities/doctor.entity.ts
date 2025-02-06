@@ -9,7 +9,6 @@ export class DoctorEntity extends Document {
   @Prop({
     unique: true,
     required: true,
-    lowercase: true,
     trim: true,
     index: true,
   })
