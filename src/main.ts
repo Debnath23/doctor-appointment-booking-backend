@@ -6,6 +6,7 @@ import {
   SwaggerCustomOptions,
 } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import * as dotenv from 'dotenv';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,10 +17,13 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+  dotenv.config();
 
   const config = new DocumentBuilder()
-    .setTitle('Doctor Appointment Booking')
-    .setDescription('Doctor Appointment Booking')
+    .setTitle('Bookify')
+    .setDescription(
+      'Bookify is a full-featured doctor appointment booking system that allows users to schedule appointments with doctors from various categories. It includes features for appointment management, doctor availability, and notifications.',
+    )
     .setVersion('1.0')
     .addBearerAuth({
       type: 'http',

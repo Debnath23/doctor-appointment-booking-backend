@@ -36,6 +36,21 @@ export class AppointmentEntity {
   @Prop({ default: 'pending', enum: ['completed', 'pending'] })
   paymentStatus?: string;
 
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ required: true })
+  email: string;
+
+  @Prop({ required: true })
+  phoneNumber: string;
+
+  @Prop({ required: true })
+  age: string;
+
+  @Prop({ required: true, match: /^(A|B|AB|O)[+-]$/ })
+  bloodGroup: string;
+
   @Prop()
   signature?: string;
 

@@ -10,9 +10,8 @@ import { Model, Types } from 'mongoose';
 import { AppointmentEntity } from 'src/entities/appointment.entity';
 import { UserEntity } from 'src/entities/user.entity';
 import { instanceOfRazorpay } from 'src/utils/instance';
-import nodemailer from 'nodemailer';
 import { validatePaymentVerification } from 'razorpay/dist/utils/razorpay-utils';
-import * as crypto from 'crypto';
+import { EmailHandler } from 'src/utils/emailHandler';
 
 @Injectable()
 export class RazorpayService {
@@ -80,11 +79,6 @@ export class RazorpayService {
         { new: true },
       );
 
-      this.sendPaymentConfirmationEmail(
-        (user.email = 'debnathmahapatra740@gmail.com'),
-        appointment,
-      );
-
       return {
         payment: paymentOrder,
         key: process.env.RAZORPAY_TEST_KEY_ID,
@@ -95,36 +89,6 @@ export class RazorpayService {
       throw new InternalServerErrorException(
         'An error occurred during checkout.',
       );
-    }
-  }
-
-  private async sendPaymentConfirmationEmail(email: string, appointment: any) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: 'live.smtp.mailtrap.io',
-        port: 587,
-        auth: {
-          user: process.env.MAILTRAP_USER,
-          pass: process.env.MAILTRAP_PASS,
-        },
-      });
-
-      await transporter.sendMail({
-        from: '"Bookify" <noreply@demomailtrap.com>',
-        to: email,
-        subject: 'Payment Confirmation - Bookify',
-        text: `
-          Payment Initiated Successfully!
-  
-Appointment Details:
-Appointment Date : ${appointment.appointmentDate.toLocaleDateString()}
-Appointment Time : ${appointment.appointmentTime}
-  
-Thank you for choosing Bookify!
-        `.trim(),
-      });
-    } catch (emailError) {
-      console.error('Error sending payment confirmation email:', emailError);
     }
   }
 
@@ -166,31 +130,11 @@ Thank you for choosing Bookify!
         );
       }
 
-      // const generatedSignature = crypto
-      //   .createHmac('sha512', process.env.RAZORPAY_TEST_KEY_SECRET)
-      //   .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-      //   .digest('hex');
-
-      // const trimmedSignature = razorpaySignature.trim();
-      // const generatedSignatureBuffer = Buffer.from(generatedSignature, 'utf-8');
-      // const razorpaySignatureBuffer = Buffer.from(trimmedSignature, 'utf-8');
-
-      // if (generatedSignatureBuffer.length !== razorpaySignatureBuffer.length) {
-      //   throw new UnprocessableEntityException(
-      //     'Invalid payment signature: Buffer lengths do not match.',
-      //   );
-      // }
-
-      // if (
-      //   !crypto.timingSafeEqual(
-      //     generatedSignatureBuffer,
-      //     razorpaySignatureBuffer,
-      //   )
-      // ) {
-      //   throw new UnprocessableEntityException(
-      //     'Invalid payment signature (timing-safe).',
-      //   );
-      // }
+      await EmailHandler(
+        user.email,
+        'Payment Successful! - Bookify',
+        appointment,
+      );
 
       await this.appointmentModel.findByIdAndUpdate(
         appointmentId,

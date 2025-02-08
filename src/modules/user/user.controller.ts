@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   NotFoundException,
+  Param,
   Patch,
   Post,
   Query,
@@ -20,26 +21,15 @@ import { isValidObjectId, Types } from 'mongoose';
 import { UpdateUserDto } from 'src/dto/updateUser.dto';
 
 @Controller('user')
-@ApiTags('Appointment Booking')
+@ApiTags('User')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
   @UseGuards(JwtAuthGuard)
   async userDetails(@Req() req: Request) {
-    try {
-      if (!req.user) {
-        throw new NotFoundException('User not found!');
-      }
-
-      const userId = req.user._id;
-
-      const response = await this.userService.userDetails(userId);
-
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const userId = this.getUserId(req);
+    return this.userService.userDetails(userId);
   }
 
   @Post('book-appointment')
@@ -48,88 +38,63 @@ export class UserController {
     @Body() bookAppointmentDto: BookAppointmentDto,
     @Req() req: Request,
   ) {
-    try {
-      if (!req.user) {
-        throw new NotFoundException('User not found!');
-      }
+    const userId = this.getUserId(req);
 
-      const userId = req.user._id;
-
-      const appointmentDateUTC = new Date(bookAppointmentDto.appointmentDate);
-      if (isNaN(appointmentDateUTC.getTime())) {
-        throw new BadRequestException('Invalid booking date format.');
-      }
-
-      return await this.userService.bookAppointment(
-        {
-          ...bookAppointmentDto,
-          appointmentDate: appointmentDateUTC,
-        },
-        userId,
-      );
-    } catch (error) {
-      throw error;
+    const appointmentDateUTC = new Date(bookAppointmentDto.appointmentDate);
+    if (isNaN(appointmentDateUTC.getTime())) {
+      throw new BadRequestException('Invalid booking date format.');
     }
+
+    return this.userService.bookAppointment(
+      { ...bookAppointmentDto, appointmentDate: appointmentDateUTC },
+      userId,
+    );
   }
 
-  @Get('appointment-details')
+  @Get('appointments-details')
   @UseGuards(JwtAuthGuard)
-  async userAppointmentDetails(
+  async userAppointmentsDetails(
     @Req() req: Request,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    try {
-      const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
-      const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
+    const userId = this.getUserId(req);
+    return this.userService.userAppointmentsDetails(
+      userId,
+      Number(limit) || 10,
+      Number(offset) || 0,
+    );
+  }
 
-      if (!req.user) {
-        throw new NotFoundException('User not found!');
-      }
-
-      const userId = req.user._id;
-
-      return await this.userService.userAppointmentDetails(
-        userId,
-        limitVal,
-        offsetVal,
-      );
-    } catch (error) {
-      throw error;
-    }
+  @Get('appointment-details/:appointment_id')
+  @UseGuards(JwtAuthGuard)
+  async userAppointmentDetails(
+    @Param('appointment_id') appointment_id: string,
+    @Req() req: Request,
+  ) {
+    const userId = this.getUserId(req);
+    const appointmentObjId = this.validateObjectId(
+      appointment_id,
+      'Invalid appointment ID format.',
+    );
+    return this.userService.userAppointmentDetailsService(
+      appointmentObjId,
+      userId,
+    );
   }
 
   @Delete('cancel-appointment')
   @UseGuards(JwtAuthGuard)
   async cancelAppointment(
     @Query('appointment_id') appointment_id: string,
-    @Query('doctor_id') doctor_id: string,
     @Req() req: Request,
   ) {
-    try {
-      if (!req.user) {
-        throw new NotFoundException('User not found!');
-      }
-
-      const userId = req.user._id as Types.ObjectId;
-
-      if (!isValidObjectId(appointment_id) || !isValidObjectId(doctor_id)) {
-        throw new BadRequestException(
-          'Invalid appointment or doctor ID format.',
-        );
-      }
-
-      const appointmentObjId = new Types.ObjectId(appointment_id);
-      const doctorObjId = new Types.ObjectId(doctor_id);
-
-      return await this.userService.cancelAppointmentService(
-        appointmentObjId,
-        doctorObjId,
-        userId,
-      );
-    } catch (error) {
-      throw error;
-    }
+    const userId = this.getUserId(req);
+    const appointmentObjId = this.validateObjectId(
+      appointment_id,
+      'Invalid appointment ID format.',
+    );
+    return this.userService.cancelAppointmentService(appointmentObjId, userId);
   }
 
   @Patch()
@@ -138,19 +103,17 @@ export class UserController {
     @Body() updateUserDetails: UpdateUserDto,
     @Req() req: Request,
   ) {
-    try {
-      if (!req.user) {
-        throw new NotFoundException('User not found!');
-      }
+    const userId = this.getUserId(req);
+    return this.userService.updateUserDetailsService(updateUserDetails, userId);
+  }
 
-      const userId = req.user._id;
+  private getUserId(req: Request): Types.ObjectId {
+    if (!req.user) throw new NotFoundException('User not found!');
+    return req.user._id as Types.ObjectId;
+  }
 
-      return await this.userService.updateUserDetailsService(
-        updateUserDetails,
-        userId,
-      );
-    } catch (error) {
-      throw error;
-    }
+  private validateObjectId(id: string, errorMessage: string): Types.ObjectId {
+    if (!isValidObjectId(id)) throw new BadRequestException(errorMessage);
+    return new Types.ObjectId(id);
   }
 }
