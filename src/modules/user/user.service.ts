@@ -157,7 +157,7 @@ export class UserService {
         appointment,
       );
 
-      return { message: 'Appointment booked successfully!' };
+      return { appointment, message: 'Appointment booked successfully!' };
     } catch (error) {
       throw error;
     }
@@ -188,8 +188,8 @@ export class UserService {
         this.appointmentModel
           .find({ userId })
           .populate('doctorId', 'name speciality profileImg')
-          .limit(limitVal)
-          .skip(offsetVal)
+          // .limit(limitVal)
+          // .skip(offsetVal)
           .sort({ appointmentDate: -1 })
           .exec(),
       ]);
