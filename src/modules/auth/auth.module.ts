@@ -8,6 +8,7 @@ import { envOptions } from 'src/config/envOptions';
 import { JwtAuthGuard } from 'src/guard/jwt.guard';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { DoctorEntity, DoctorEntitySchema } from 'src/entities/doctor.entity';
+import { EmailService } from 'src/utils/email.service';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { DoctorEntity, DoctorEntitySchema } from 'src/entities/doctor.entity';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, JwtService],
+  providers: [AuthService, JwtAuthGuard, JwtService, EmailService],
   exports: [JwtService]
 })
 export class AuthModule {}

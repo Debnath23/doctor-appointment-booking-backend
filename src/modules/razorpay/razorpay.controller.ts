@@ -25,35 +25,29 @@ export class RazorpayController {
   @Post('checkout')
   @UseGuards(JwtAuthGuard)
   async userDetails(@Body() paymentDto: PaymentDto, @Req() req: Request) {
-    try {
-      if (!req.user) {
-        throw new NotFoundException('User not found!');
-      }
-
-      if (!paymentDto) {
-        throw new UnprocessableEntityException('Invalid payment details.');
-      }
-
-      if (!Types.ObjectId.isValid(paymentDto.appointmentId)) {
-        throw new BadRequestException('Invalid Appointment ID format');
-      }
-
-      const userId = new Types.ObjectId(req.user._id);
-      const appointmentObjId = new Types.ObjectId(paymentDto.appointmentId);
-      const amountToPay = paymentDto.amountToPay;
-
-      const response = await this.razorpayService.checkoutService(
-        appointmentObjId,
-        amountToPay,
-        userId,
-      );
-
-      return response;
-    } catch (error) {
-      throw new InternalServerErrorException(
-        error.message || 'An error occurred during checkout.',
-      );
+    if (!req.user) {
+      throw new NotFoundException('User not found!');
     }
+
+    if (!paymentDto) {
+      throw new UnprocessableEntityException('Invalid payment details.');
+    }
+
+    if (!Types.ObjectId.isValid(paymentDto.appointmentId)) {
+      throw new BadRequestException('Invalid Appointment ID format');
+    }
+
+    const userId = new Types.ObjectId(req.user._id);
+    const appointmentObjId = new Types.ObjectId(paymentDto.appointmentId);
+    const amountToPay = paymentDto.amountToPay;
+
+    const response = await this.razorpayService.checkoutService(
+      appointmentObjId,
+      amountToPay,
+      userId,
+    );
+
+    return response;
   }
 
   @Post('verify')
@@ -63,38 +57,31 @@ export class RazorpayController {
     @Req() req: Request,
     @Body() body: any,
   ) {
-    try {
-      if (!req.user) {
-        throw new NotFoundException('User not found!');
-      }
-
-      if (!appointment_id) {
-        throw new UnprocessableEntityException('Appointment ID is required.');
-      }
-
-      if (!req.body) {
-        throw new UnprocessableEntityException('Payment details are required.');
-      }
-
-      const userId = req.user._id;
-      const appointmentObjId = new Types.ObjectId(appointment_id);
-
-      const { razorpay_signature, razorpay_order_id, razorpay_payment_id } =
-        body;
-
-      const response = await this.razorpayService.verifyPaymentService(
-        appointmentObjId,
-        userId,
-        razorpay_signature,
-        razorpay_order_id,
-        razorpay_payment_id,
-      );
-
-      return response;
-    } catch (error) {
-      throw new Error(
-        error.message || 'An error occurred while verifying payment.',
-      );
+    if (!req.user) {
+      throw new NotFoundException('User not found!');
     }
+
+    if (!appointment_id) {
+      throw new UnprocessableEntityException('Appointment ID is required.');
+    }
+
+    if (!req.body) {
+      throw new UnprocessableEntityException('Payment details are required.');
+    }
+
+    const userId = req.user._id;
+    const appointmentObjId = new Types.ObjectId(appointment_id);
+
+    const { razorpay_signature, razorpay_order_id, razorpay_payment_id } = body;
+
+    const response = await this.razorpayService.verifyPaymentService(
+      appointmentObjId,
+      userId,
+      razorpay_signature,
+      razorpay_order_id,
+      razorpay_payment_id,
+    );
+
+    return response;
   }
 }

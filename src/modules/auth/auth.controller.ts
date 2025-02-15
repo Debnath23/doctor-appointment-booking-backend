@@ -6,6 +6,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  NotFoundException,
   Post,
   Req,
   Res,
@@ -31,40 +32,40 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() createUserDto: CreateUserDto) {
-    try {
-      return await this.authService.createUser(createUserDto);
-    } catch (error) {
-      throw error;
-    }
+    return await this.authService.createUser(createUserDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('send-otp')
+  async generateOTP(@Req() req: Request) {
+    const userId = this.getUserId(req);
+    return await this.authService.generateOTPService(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-otp')
+  async verifyOTP(@Body() otp: { otp: string }, @Req() req: Request) {
+    const userId = this.getUserId(req);
+    return await this.authService.verifyOTPService(otp, userId);
   }
 
   @Post('login')
   @UseInterceptors(SetCookiesInterceptor)
   async login(@Body() loginDto: LoginDto) {
-    try {
-      if (!loginDto) {
-        throw new BadRequestException('All fields are required');
-      }
-
-      return await this.authService.loginUser(loginDto);
-    } catch (error: any) {
-      throw error;
+    if (!loginDto) {
+      throw new BadRequestException('All fields are required');
     }
+    return await this.authService.loginUser(loginDto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('logout')
   @UseInterceptors(ClearCookiesInterceptor)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    try {
-      if (!req.user) {
-        throw new UnauthorizedException('Unauthorized');
-      }
-
-      return await this.authService.logoutUser(req.user._id, res);
-    } catch (error) {
-      throw error;
+    if (!req.user) {
+      throw new UnauthorizedException('Unauthorized');
     }
+    return await this.authService.logoutUser(req.user._id, res);
   }
 
   @Get('verify')
@@ -96,5 +97,10 @@ export class AuthController {
     } catch (error) {
       return res.status(401).json({ isAuthenticated: false });
     }
+  }
+
+  private getUserId(req: Request): Types.ObjectId {
+    if (!req.user) throw new NotFoundException('User not found!');
+    return req.user._id as Types.ObjectId;
   }
 }

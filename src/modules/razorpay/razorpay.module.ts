@@ -11,6 +11,7 @@ import {
   AppointmentEntity,
   AppointmentEntitySchema,
 } from 'src/entities/appointment.entity';
+import { EmailService } from 'src/utils/email.service';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import {
     }),
   ],
   controllers: [RazorpayController],
-  providers: [RazorpayService, JwtAuthGuard, JwtService],
+  providers: [RazorpayService, JwtAuthGuard, JwtService, EmailService],
   exports: [JwtService],
 })
 export class RazorpayModule {}

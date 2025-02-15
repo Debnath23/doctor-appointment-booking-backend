@@ -30,15 +30,11 @@ export class DoctorController {
   @Post('login')
   @UseInterceptors(SetCookiesInterceptor)
   async login(@Body() loginDto: LoginDto) {
-    try {
-      if (!loginDto) {
-        throw new BadRequestException('All fields are required');
-      }
-
-      return await this.doctorService.loginDoctor(loginDto);
-    } catch (error: any) {
-      throw error;
+    if (!loginDto) {
+      throw new BadRequestException('All fields are required');
     }
+
+    return await this.doctorService.loginDoctor(loginDto);
   }
 
   @Get('all-doctors-details')
@@ -46,52 +42,32 @@ export class DoctorController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    try {
-      const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
-      const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
+    const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
+    const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
 
-      return await this.doctorService.allDoctors(limitVal, offsetVal);
-    } catch (error) {
-      throw error;
-    }
+    return await this.doctorService.allDoctors(limitVal, offsetVal);
   }
 
   @Get('/:docId')
   async doctorDetails(@Param('docId') docId: number) {
-    try {
-      return await this.doctorService.doctorDetails(docId);
-    } catch (error) {
-      throw error;
-    }
+    return await this.doctorService.doctorDetails(docId);
   }
 
   @Get('/search')
   async searchDoctor(@Query('query') query: string) {
-    try {
-      return await this.doctorService.searchDoctor(query);
-    } catch (error) {
-      throw error;
-    }
+    return await this.doctorService.searchDoctor(query);
   }
 
   @Get('appointment-details')
-@UseGuards(DoctorAuthGuard)
-async doctorAppointmentDetails(@Req() req: Request) {
-  try {
-    console.log('Request user:', req.user);
-
+  @UseGuards(DoctorAuthGuard)
+  async doctorAppointmentDetails(@Req() req: Request) {
     if (!req.user || !(req.user as DoctorEntity)._id) {
       throw new NotFoundException('Doctor not found!');
     }
 
     const docId = (req.user as DoctorEntity)._id;
     return await this.doctorService.doctorAppointmentDetailsService(docId);
-  } catch (error) {
-    console.error('Error in doctorAppointmentDetails:', error);
-    throw error;
   }
-}
-
 
   @Delete('cancel-appointment')
   @UseGuards(JwtAuthGuard)
@@ -100,29 +76,23 @@ async doctorAppointmentDetails(@Req() req: Request) {
     @Query('user_id') user_id: string,
     @Req() req: Request,
   ) {
-    try {
-      if (!req.user) {
-        throw new NotFoundException('Doctor not found!');
-      }
-
-      const docId = req.user._id as Types.ObjectId;
-
-      if (!isValidObjectId(appointment_id) || !isValidObjectId(user_id)) {
-        throw new BadRequestException(
-          'Invalid appointment or doctor ID format.',
-        );
-      }
-
-      const appointmentObjId = new Types.ObjectId(appointment_id);
-      const userObjId = new Types.ObjectId(user_id);
-
-      return await this.doctorService.cancelAppointmentService(
-        appointmentObjId,
-        userObjId,
-        docId,
-      );
-    } catch (error) {
-      throw error;
+    if (!req.user) {
+      throw new NotFoundException('Doctor not found!');
     }
+
+    const docId = req.user._id as Types.ObjectId;
+
+    if (!isValidObjectId(appointment_id) || !isValidObjectId(user_id)) {
+      throw new BadRequestException('Invalid appointment or doctor ID format.');
+    }
+
+    const appointmentObjId = new Types.ObjectId(appointment_id);
+    const userObjId = new Types.ObjectId(user_id);
+
+    return await this.doctorService.cancelAppointmentService(
+      appointmentObjId,
+      userObjId,
+      docId,
+    );
   }
 }

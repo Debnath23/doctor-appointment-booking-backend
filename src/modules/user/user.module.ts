@@ -7,7 +7,11 @@ import { DoctorEntity, DoctorEntitySchema } from 'src/entities/doctor.entity';
 import { JwtAuthGuard } from 'src/guard/jwt.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtService } from '@nestjs/jwt';
-import { AppointmentEntity, AppointmentEntitySchema } from 'src/entities/appointment.entity';
+import {
+  AppointmentEntity,
+  AppointmentEntitySchema,
+} from 'src/entities/appointment.entity';
+import { EmailService } from 'src/utils/email.service';
 
 @Module({
   imports: [
@@ -22,7 +26,7 @@ import { AppointmentEntity, AppointmentEntitySchema } from 'src/entities/appoint
     }),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtAuthGuard, JwtService],
+  providers: [UserService, JwtAuthGuard, JwtService, EmailService],
   exports: [JwtService],
 })
 export class UserModule {}

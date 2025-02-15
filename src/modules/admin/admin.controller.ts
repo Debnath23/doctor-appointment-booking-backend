@@ -1,6 +1,5 @@
 import {
   Body,
-  ConflictException,
   Controller,
   Get,
   HttpException,
@@ -44,27 +43,28 @@ export class AdminController {
     @Body() createDoctorDto: CreateDoctorDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    try {
-      if (!createDoctorDto) {
-        throw new HttpException(
-          'Fields are required.',
-          HttpStatus.UNPROCESSABLE_ENTITY,
-        );
-      }
-
-      if (!file) {
-        throw new HttpException(
-          'profileImg is required.',
-          HttpStatus.UNPROCESSABLE_ENTITY,
-        );
-      }
-
-      createDoctorDto.profileImg = file.path;
-
-      return await this.adminService.createDoctorAccount(createDoctorDto);
-    } catch (error) {
-      throw error;
+    if (!createDoctorDto) {
+      throw new HttpException(
+        'Fields are required.',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
     }
+
+    if (!file) {
+      throw new HttpException(
+        'profileImg is required.',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    createDoctorDto.profileImg = file.path;
+
+    return await this.adminService.createDoctorAccount(createDoctorDto);
+  }
+
+  @Post('doctor')
+  async dataSeeding() {
+    return await this.adminService.dataSeeding();
   }
 
   @Get('users-details')
@@ -73,17 +73,10 @@ export class AdminController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    try {
-      const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
-      const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
+    const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
+    const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
 
-      return await this.adminService.getUsersDetailsService(
-        limitVal,
-        offsetVal,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return await this.adminService.getUsersDetailsService(limitVal, offsetVal);
   }
 
   @Get('user/appointment-details/:userId')
@@ -93,18 +86,14 @@ export class AdminController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ) {
-    try {
-      const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
-      const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
+    const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
+    const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
 
-      return await this.adminService.userAppointmentDetailsService(
-        userId,
-        limitVal,
-        offsetVal,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return await this.adminService.userAppointmentDetailsService(
+      userId,
+      limitVal,
+      offsetVal,
+    );
   }
 
   @Get('doctors-details')
@@ -113,17 +102,13 @@ export class AdminController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    try {
-      const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
-      const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
+    const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
+    const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
 
-      return await this.adminService.getdoctorsDetailsService(
-        limitVal,
-        offsetVal,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return await this.adminService.getdoctorsDetailsService(
+      limitVal,
+      offsetVal,
+    );
   }
 
   @Get('doctor/appointment-details/:doctorId')
@@ -133,17 +118,13 @@ export class AdminController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ) {
-    try {
-      const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
-      const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
+    const limitVal = limit ? parseInt(limit.toString(), 10) : 10;
+    const offsetVal = offset ? parseInt(offset.toString(), 10) : 0;
 
-      return await this.adminService.doctorAppointmentDetailsService(
-        doctorId,
-        limitVal,
-        offsetVal,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return await this.adminService.doctorAppointmentDetailsService(
+      doctorId,
+      limitVal,
+      offsetVal,
+    );
   }
 }
